@@ -11,12 +11,20 @@ export function parseJsonArray(raw: string | null | undefined): string[] {
   }
 }
 
+function filledContact(value?: string | null) {
+  return Boolean(value && value.trim());
+}
+
 export function hasContact(c: {
   line_id?: string | null;
   instagram_handle?: string | null;
   threads_handle?: string | null;
 }) {
-  return Boolean(c.line_id || c.instagram_handle || c.threads_handle);
+  return (
+    filledContact(c.line_id) ||
+    filledContact(c.instagram_handle) ||
+    filledContact(c.threads_handle)
+  );
 }
 
 export function toPublicProfile(row: {

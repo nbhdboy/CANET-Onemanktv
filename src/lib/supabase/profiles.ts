@@ -1,8 +1,12 @@
+import { logApp, logAppError } from "@/lib/log";
 import type { PrivateContacts, Profile, UserStatus } from "@/lib/types";
 import { createSupabaseServerClient, createSupabaseServiceClient } from "./server";
 
 async function dataClient() {
-  return createSupabaseServiceClient() ?? (await createSupabaseServerClient());
+  const admin = createSupabaseServiceClient();
+  if (admin) return admin;
+  logAppError("supabase.service_role_missing");
+  return createSupabaseServerClient();
 }
 
 function flag(value: unknown) {
@@ -52,20 +56,43 @@ export async function ensureSupabaseProfile(id: string): Promise<Profile | undef
 
 export async function fetchSupabaseContacts(userId: string): Promise<PrivateContacts | undefined> {
   const supabase = await dataClient();
-  if (!supabase) return undefined;
+  if (!supabase) {
+    logAppError("contacts.no_client", { userId });
+    return undefined;
+  }
   const { data, error } = await supabase
     .from("user_private_contacts")
-    .select("user_id, line_id, instagram_handle, threads_handle, phone_private")
+    .select("user_id, line_id, instagram_handle, threads_handle")
     .eq("user_id", userId)
     .maybeSingle();
-  if (error || !data) return undefined;
-  return {
+  if (error) {
+    logAppError("contacts.fetch_failed", {
+      userId,
+      code: error.code,
+      message: error.message,
+    });
+    throw new Error(`讀取聯絡方式失敗：${error.message}`);
+  }
+  if (!data) {
+    logApp("contacts.missing_row", { userId });
+    return undefined;
+  }
+  const contacts: PrivateContacts = {
     user_id: String(data.user_id),
-    line_id: data.line_id ?? null,
-    instagram_handle: data.instagram_handle ?? null,
-    threads_handle: data.threads_handle ?? null,
-    phone_private: data.phone_private ?? null,
+    line_id: typeof data.line_id === "string" ? data.line_id.trim() || null : null,
+    instagram_handle:
+      typeof data.instagram_handle === "string" ? data.instagram_handle.trim() || null : null,
+    threads_handle:
+      typeof data.threads_handle === "string" ? data.threads_handle.trim() || null : null,
+    phone_private: null,
   };
+  logApp("contacts.fetched", {
+    userId,
+    hasLine: Boolean(contacts.line_id),
+    hasIg: Boolean(contacts.instagram_handle),
+    hasThreads: Boolean(contacts.threads_handle),
+  });
+  return contacts;
 }
 
 export async function saveSupabaseContacts(

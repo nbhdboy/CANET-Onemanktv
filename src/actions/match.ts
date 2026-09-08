@@ -21,6 +21,7 @@ import { blockUser, createReport } from "@/lib/safety";
 import { track } from "@/lib/db";
 import { combineTaipeiDateTime } from "@/lib/time";
 import { gateError } from "@/lib/format";
+import { logApp, logAppError } from "@/lib/log";
 import type { ActionResult } from "@/lib/types";
 
 function fail(e: unknown): ActionResult {
@@ -45,6 +46,14 @@ export async function createRequestAction(_: ActionResult, formData: FormData): 
     const genres = formData.getAll("genres").map(String);
     const preferences = formData.getAll("preferences").map(String);
     const costRaw = String(formData.get("cost") || "").trim();
+    logApp("request.create_start", {
+      userId: session.id,
+      venueId: String(formData.get("venueId") || ""),
+      genreCount: genres.length,
+      preferenceCount: preferences.length,
+      hasDate: Boolean(formData.get("date")),
+      hasTime: Boolean(formData.get("time")),
+    });
     const id = await createRequestApp({
       userId: session.id,
       venueId: String(formData.get("venueId")),
@@ -55,10 +64,14 @@ export async function createRequestAction(_: ActionResult, formData: FormData): 
       note: String(formData.get("note") || ""),
       estimatedTotal: costRaw ? Number(costRaw) : null,
     });
+    logApp("request.create_ok", { userId: session.id, requestId: id });
     revalidatePath("/");
     redirect(`/requests/${id}`);
   } catch (e) {
     rethrowIfRedirect(e);
+    logAppError("request.create_failed", {
+      message: e instanceof Error ? e.message : String(e),
+    });
     return fail(e);
   }
 }

@@ -3,6 +3,7 @@ import { isPast } from "@/lib/time";
 import { ageFromBirthYear } from "@/lib/time";
 import { ageBandFromYears } from "@/lib/constants";
 import { hasContact, parseJsonArray, toPublicProfile } from "@/lib/format";
+import { logApp, logAppError } from "@/lib/log";
 import { assertActive } from "@/lib/users";
 import { fetchSupabaseContacts, fetchSupabaseProfile } from "@/lib/supabase/profiles";
 import {
@@ -116,12 +117,34 @@ function toTimestamptz(iso: string) {
 
 export async function assertCanCreateOrApplySupabase(userId: string) {
   const profile = await fetchSupabaseProfile(userId);
-  if (!profile) throw new Error("UNAUTHORIZED");
+  if (!profile) {
+    logAppError("request.gate_no_profile", { userId });
+    throw new Error("UNAUTHORIZED");
+  }
   assertActive(profile);
-  if (!profile.age_verified) throw new Error("AGE");
-  if (!profile.terms_agreed || !profile.profile_completed) throw new Error("PROFILE");
+  if (!profile.age_verified) {
+    logAppError("request.gate_age", { userId });
+    throw new Error("AGE");
+  }
+  if (!profile.terms_agreed || !profile.profile_completed) {
+    logAppError("request.gate_profile", {
+      userId,
+      termsAgreed: Boolean(profile.terms_agreed),
+      profileCompleted: Boolean(profile.profile_completed),
+    });
+    throw new Error("PROFILE");
+  }
   const contacts = await fetchSupabaseContacts(userId);
-  if (!contacts || !hasContact(contacts)) throw new Error("CONTACT");
+  const ok = Boolean(contacts && hasContact(contacts));
+  logApp("request.gate_contacts", {
+    userId,
+    hasRow: Boolean(contacts),
+    hasLine: Boolean(contacts?.line_id),
+    hasIg: Boolean(contacts?.instagram_handle),
+    hasThreads: Boolean(contacts?.threads_handle),
+    ok,
+  });
+  if (!ok) throw new Error("CONTACT");
   return { profile, contacts };
 }
 
@@ -171,8 +194,20 @@ export async function createSupabaseRequest(input: {
   };
 
   const { data, error } = await client.from("sing_requests").insert(payload).select("id").maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data?.id) throw new Error("發布失敗，請再試一次。");
+  if (error) {
+    logAppError("request.insert_failed", {
+      userId: input.userId,
+      venueId: input.venueId,
+      code: error.code,
+      message: error.message,
+    });
+    throw new Error(error.message);
+  }
+  if (!data?.id) {
+    logAppError("request.insert_empty", { userId: input.userId, venueId: input.venueId });
+    throw new Error("發布失敗，請再試一次。");
+  }
+  logApp("request.inserted", { userId: input.userId, requestId: data.id, venueId: input.venueId });
   return String(data.id);
 }
 
