@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { listApplicants, getRequestCard } from "@/lib/match";
+import { listApplicants } from "@/lib/match";
+import { loadRequestCard } from "@/lib/app-data";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
 import { ApplicantActions } from "@/components/match/ApplicantActions";
@@ -16,7 +17,7 @@ export default async function ApplicantsPage({ params }: { params: IdParams }) {
   const session = await getSession();
   if (!session) redirect("/login");
   const { id } = await params;
-  const item = getRequestCard(id, session.id);
+  const item = await loadRequestCard(id, session.id);
   if (!item || item.initiator.id !== session.id) notFound();
   const applicants = listApplicants(session.id, id);
   const pending = applicants.filter((a) => a.application.status === "PENDING");

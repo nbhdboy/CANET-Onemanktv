@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { RequestStage } from "@/components/requests/RequestStage";
 import { getSession } from "@/lib/session";
-import { getRequestCard } from "@/lib/match";
+import { loadRequestCard } from "@/lib/app-data";
 import { track } from "@/lib/db";
 import { listReviewsForUser, reviewTagStats } from "@/lib/reviews";
 
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function RequestDetailPage({ params }: { params: IdParams }) {
   const { id } = await params;
   const session = await getSession();
-  const item = getRequestCard(id, session?.id);
+  const item = await loadRequestCard(id, session?.id);
   if (!item) notFound();
   if (session) track("request_viewed", session.id, { requestId: id });
 

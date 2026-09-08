@@ -458,6 +458,7 @@ export function applyToRequest(userId: string, requestId: string) {
 }
 
 export function listApplicants(userId: string, requestId: string) {
+  if (useSupabaseApp()) return [];
   const req = getDb()
     .prepare(`SELECT * FROM sing_requests WHERE id = ?`)
     .get(requestId) as SingRequest | undefined;

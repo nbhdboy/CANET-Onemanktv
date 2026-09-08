@@ -8,13 +8,12 @@ import {
   acceptApplication,
   rejectApplication,
   cancelRequest,
-  createRequest,
   settleMockPayment,
   markBookingDone,
   getMatchForUser,
-  listFeed,
   type FeedFilters,
 } from "@/lib/match";
+import { createRequestApp } from "@/lib/app-data";
 import { getSession } from "@/lib/session";
 import { getUnlockedCounterpartContacts } from "@/lib/contacts";
 import { submitReview } from "@/lib/reviews";
@@ -35,7 +34,7 @@ export async function createRequestAction(_: ActionResult, formData: FormData): 
     const genres = formData.getAll("genres").map(String);
     const preferences = formData.getAll("preferences").map(String);
     const costRaw = String(formData.get("cost") || "").trim();
-    const id = createRequest({
+    const id = await createRequestApp({
       userId: session.id,
       venueId: String(formData.get("venueId")),
       singAt: combineTaipeiDateTime(String(formData.get("date")), String(formData.get("time"))),
@@ -188,5 +187,6 @@ export async function reportAction(_: ActionResult, formData: FormData): Promise
 
 export async function fetchFeedAction(filters: FeedFilters) {
   const session = await getSession();
-  return listFeed(filters, session?.id);
+  const { listFeedApp } = await import("@/lib/app-data");
+  return listFeedApp(filters, session?.id);
 }

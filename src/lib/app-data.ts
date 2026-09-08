@@ -16,7 +16,14 @@ import {
 } from "@/lib/supabase/profiles";
 import { ageFromBirthYear } from "@/lib/time";
 import { hasContact } from "@/lib/format";
+import type { FeedFilters } from "@/lib/match";
 import type { PrivateContacts, Profile } from "@/lib/types";
+import { getRequestCard, listFeed } from "@/lib/match";
+import {
+  createSupabaseRequest,
+  fetchSupabaseRequestCard,
+  listSupabaseFeed,
+} from "@/lib/supabase/requests";
 
 export async function loadProfile(id: string): Promise<Profile | undefined> {
   if (useSupabaseApp()) return fetchSupabaseProfile(id);
@@ -82,4 +89,29 @@ export async function completeOnboardingApp(input: {
     return;
   }
   completeOnboarding(input);
+}
+
+export async function createRequestApp(input: {
+  userId: string;
+  venueId: string;
+  singAt: string;
+  durationHours: number;
+  genres: string[];
+  preferences: string[];
+  note: string;
+  estimatedTotal?: number | null;
+}) {
+  if (useSupabaseApp()) return createSupabaseRequest(input);
+  const { createRequest } = await import("@/lib/match");
+  return createRequest(input);
+}
+
+export async function loadRequestCard(id: string, viewerId?: string | null) {
+  if (useSupabaseApp()) return fetchSupabaseRequestCard(id);
+  return getRequestCard(id, viewerId);
+}
+
+export async function listFeedApp(filters: FeedFilters, viewerId?: string | null) {
+  if (useSupabaseApp()) return listSupabaseFeed(filters);
+  return listFeed(filters, viewerId);
 }

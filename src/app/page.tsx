@@ -1,6 +1,7 @@
 import { HomeExperience } from "@/components/home/HomeExperience";
 import { getSession } from "@/lib/session";
-import { getBrands, getCities, getVenues, listFeed } from "@/lib/match";
+import { getBrands, getCities, getVenues } from "@/lib/match";
+import { listFeedApp } from "@/lib/app-data";
 import { heroByAge } from "@/lib/constants";
 import type { Search } from "@/lib/route-types";
 
@@ -17,7 +18,7 @@ export default async function HomePage({ searchParams }: { searchParams: Search 
     venue: typeof sp.venue === "string" ? sp.venue : undefined,
     posted: typeof sp.posted === "string" ? sp.posted : undefined,
   };
-  const items = listFeed({ ...filters, age }, session?.id);
+  const items = await listFeedApp({ ...filters, age }, session?.id);
   const brands = getBrands();
   const venues = getVenues();
   const cities = getCities();

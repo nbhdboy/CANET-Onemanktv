@@ -5,6 +5,7 @@ import { nanoid } from "nanoid";
 import { DEFAULT_CONFIG } from "./constants";
 import { SEED_VENUES, VENUE_SEED_VERSION, seedVenueId } from "./ktv-venues";
 import { nowIso } from "./time";
+import { useSupabaseApp } from "./runtime";
 
 const globalForDb = globalThis as unknown as { kplus1Db?: Database.Database };
 
@@ -340,6 +341,7 @@ export function track(
   userId?: string | null,
   payload?: Record<string, unknown>,
 ) {
+  if (useSupabaseApp()) return;
   getDb()
     .prepare(
       `INSERT INTO analytics_events (id, user_id, name, payload, created_at)
