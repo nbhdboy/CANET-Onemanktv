@@ -134,8 +134,8 @@ export async function tapPayIssueTaxableInvoice(input: {
     free_tax_sales_amount: 0,
     tax_amount: taxAmount,
     total_amount: totalAmount,
+    // 應稅(tax_type=1)不帶零稅率原因；該欄位僅適用 71–79
     customs_clearance_mark_enum: 1,
-    zero_tax_rate_reason_enum: 0,
     details: [
       {
         sequence_id: "001",

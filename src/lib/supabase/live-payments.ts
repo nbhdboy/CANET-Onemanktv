@@ -14,8 +14,10 @@ function client() {
 }
 
 function makeOrderNumber(paymentId: string) {
-  const compact = paymentId.replace(/-/g, "").slice(0, 16);
-  return `KP${compact}${Date.now().toString(36)}`.slice(0, 40);
+  // TapPay 規格 order_number 上限 20 字
+  const compact = paymentId.replace(/-/g, "").slice(0, 10);
+  const time = Date.now().toString(36).slice(-6);
+  return `KP${compact}${time}`.slice(0, 20);
 }
 
 async function issueInvoiceForPayment(row: Record<string, unknown>) {
