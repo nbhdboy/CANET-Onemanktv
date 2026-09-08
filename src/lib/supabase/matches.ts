@@ -33,7 +33,12 @@ function calcFee(profile: Profile) {
 }
 
 function provider() {
-  return process.env.PAYMENT_MODE || DEFAULT_CONFIG.payment_mode || "MOCK";
+  const mode = (process.env.PAYMENT_MODE || DEFAULT_CONFIG.payment_mode || "MOCK").toUpperCase();
+  return mode === "LIVE" ? "TAPPAY" : "MOCK";
+}
+
+function isMockPayment() {
+  return provider() === "MOCK";
 }
 
 function timeoutMinutes() {
@@ -147,7 +152,7 @@ export async function rejectSupabaseApplication(userId: string, applicationId: s
   logApp("apply.rejected", { userId, applicationId, requestId: app.request_id });
 }
 
-async function maybeConfirmSupabaseMatch(matchId: string) {
+export async function maybeConfirmSupabaseMatch(matchId: string) {
   const client = writeClient();
   const { data: match } = await client.from("matches").select("*").eq("id", matchId).maybeSingle();
   if (!match || match.status !== "PENDING_PAYMENT") return false;
@@ -522,7 +527,7 @@ export async function getSupabaseMyPayment(matchId: string, userId: string) {
 }
 
 export async function settleSupabaseMockPayment(userId: string, paymentId: string) {
-  if (provider() !== "MOCK") throw new Error("正式金流模式不可使用模擬付款。");
+  if (!isMockPayment()) throw new Error("正式金流模式不可使用模擬付款。");
   const client = writeClient();
   const { data: pay, error } = await client.from("payments").select("*").eq("id", paymentId).maybeSingle();
   if (error) throw new Error(error.message);

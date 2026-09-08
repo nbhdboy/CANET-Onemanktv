@@ -5,8 +5,8 @@ import { nowIso } from "@/lib/time";
 import type { PaymentRecord } from "@/lib/types";
 
 /**
- * LIVE 金流 webhook。成功與否以伺服器收到的 gateway 事件為準，
- * 前端顯示付款成功不可直接改 Match。
+ * 舊版通用 LIVE webhook（SQLite）。
+ * Vercel + TapPay 請改走 `/api/payments/tappay/notify`。
  */
 export async function POST(req: Request) {
   const mode = getConfig("payment_mode") || process.env.PAYMENT_MODE || "MOCK";

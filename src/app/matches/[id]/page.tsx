@@ -9,12 +9,14 @@ import {
   loadRequestCard,
 } from "@/lib/app-data";
 import { MockCheckout } from "@/components/match/MockCheckout";
+import { TapPayCheckout } from "@/components/match/TapPayCheckout";
 import { UnlockedContacts } from "@/components/match/UnlockedContacts";
 import { BookingPanel } from "@/components/match/BookingPanel";
 import { ReviewForm } from "@/components/match/ReviewForm";
 import { SafetyActions } from "@/components/safety/SafetyActions";
 import { canReview } from "@/lib/reviews";
 import { useSupabaseApp } from "@/lib/runtime";
+import { getTapPayPublicConfig, isLivePayment } from "@/lib/tappay/env";
 import { countdownLabel, formatDateTime } from "@/lib/time";
 import { durationLabel } from "@/lib/format";
 import Link from "next/link";
@@ -43,13 +45,27 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
     : canReview(session.id, match.id);
 
   if (match.status === "PENDING_PAYMENT" && myPay?.status === "PENDING") {
+    const live = isLivePayment();
+    const tappay = getTapPayPublicConfig();
     return (
       <main className="mx-auto max-w-lg px-4 py-10 space-y-6">
-        <MockCheckout
-          paymentId={myPay.id}
-          amount={myPay.fee_due}
-          deadlineLabel={match.payment_deadline ? countdownLabel(match.payment_deadline) : "--"}
-        />
+        {live ? (
+          <TapPayCheckout
+            paymentId={myPay.id}
+            amount={myPay.fee_due}
+            deadlineLabel={match.payment_deadline ? countdownLabel(match.payment_deadline) : "--"}
+            defaultEmail={session.email}
+            appId={tappay.appId}
+            appKey={tappay.appKey}
+            tappayEnv={tappay.env}
+          />
+        ) : (
+          <MockCheckout
+            paymentId={myPay.id}
+            amount={myPay.fee_due}
+            deadlineLabel={match.payment_deadline ? countdownLabel(match.payment_deadline) : "--"}
+          />
+        )}
         <p className="text-sm text-[var(--muted)]">
           對方付款狀態：
           {allPay
