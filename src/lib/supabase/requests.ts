@@ -6,6 +6,7 @@ import { hasContact, parseJsonArray, toPublicProfile } from "@/lib/format";
 import { logApp, logAppError } from "@/lib/log";
 import { assertActive } from "@/lib/users";
 import { fetchSupabaseContacts, fetchSupabaseProfile } from "@/lib/supabase/profiles";
+import { ensureSupabaseKtvCatalog } from "@/lib/supabase/venues";
 import {
   createSupabaseServerClient,
   createSupabaseServiceClient,
@@ -165,22 +166,38 @@ export async function createSupabaseRequest(input: {
   if (input.note.length > 200) throw new Error("額外需求最多 200 字。");
 
   const client = writeClient();
+  await ensureSupabaseKtvCatalog(client);
 
+  const venueId = input.venueId.trim();
   const { data: venue, error: venueError } = await client
     .from("ktv_venues")
     .select("id, enabled")
-    .eq("id", input.venueId)
+    .eq("id", venueId)
     .maybeSingle();
-  if (venueError) throw new Error(venueError.message);
+  if (venueError) {
+    logAppError("request.venue_lookup_failed", {
+      userId: input.userId,
+      venueId,
+      code: venueError.code,
+      message: venueError.message,
+    });
+    throw new Error(venueError.message);
+  }
+  logApp("request.venue_lookup", {
+    userId: input.userId,
+    venueId,
+    found: Boolean(venue),
+    enabled: venue?.enabled ?? null,
+  });
   if (!venue || venue.enabled === false) {
-    throw new Error("找不到門市。請先在 Supabase 匯入店資料。");
+    throw new Error("找不到門市，請重新選擇後再發布。");
   }
 
   const id = randomUUID();
   const payload = {
     id,
     initiator_id: input.userId,
-    venue_id: input.venueId,
+    venue_id: venueId,
     sing_at: singAt,
     duration_hours: Number(input.durationHours),
     music_genres: input.genres,
