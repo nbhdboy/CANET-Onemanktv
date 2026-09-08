@@ -6,7 +6,7 @@ import {
   saveOwnContacts,
   updateProfileFields,
 } from "@/lib/users";
-import { unreadCount } from "@/lib/notifications";
+import { unreadCount, listNotifications, markAllRead } from "@/lib/notifications";
 import {
   completeSupabaseOnboarding,
   fetchSupabaseContacts,
@@ -14,10 +14,15 @@ import {
   saveSupabaseContacts,
   updateSupabaseProfile,
 } from "@/lib/supabase/profiles";
+import {
+  listSupabaseNotifications,
+  markSupabaseAllRead,
+  unreadSupabaseCount,
+} from "@/lib/supabase/notifications";
 import { ageFromBirthYear } from "@/lib/time";
 import { hasContact } from "@/lib/format";
 import type { FeedFilters } from "@/lib/match";
-import type { PrivateContacts, Profile } from "@/lib/types";
+import type { MatchRecord, NotificationRecord, PaymentRecord, PrivateContacts, Profile } from "@/lib/types";
 import { getRequestCard, listFeed } from "@/lib/match";
 import {
   applySupabaseRequest,
@@ -39,7 +44,6 @@ import {
   rejectSupabaseApplication,
   settleSupabaseMockPayment,
 } from "@/lib/supabase/matches";
-import type { MatchRecord, PaymentRecord } from "@/lib/types";
 
 export async function loadProfile(id: string): Promise<Profile | undefined> {
   if (useSupabaseApp()) return fetchSupabaseProfile(id);
@@ -52,8 +56,21 @@ export async function loadContacts(userId: string): Promise<PrivateContacts | un
 }
 
 export async function loadUnread(userId: string): Promise<number> {
-  if (useSupabaseApp()) return 0;
+  if (useSupabaseApp()) return unreadSupabaseCount(userId);
   return unreadCount(userId);
+}
+
+export async function loadNotifications(userId: string): Promise<NotificationRecord[]> {
+  if (useSupabaseApp()) return listSupabaseNotifications(userId);
+  return listNotifications(userId);
+}
+
+export async function markNotificationsReadApp(userId: string) {
+  if (useSupabaseApp()) {
+    await markSupabaseAllRead(userId);
+    return;
+  }
+  markAllRead(userId);
 }
 
 export async function saveContactsApp(

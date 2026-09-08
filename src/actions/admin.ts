@@ -11,7 +11,7 @@ import {
   updateBrand,
   upsertVenue,
 } from "@/lib/admin";
-import { markAllRead } from "@/lib/notifications";
+import { markNotificationsReadApp } from "@/lib/app-data";
 import type { ActionResult } from "@/lib/types";
 import type { UserStatus } from "@/lib/types";
 
@@ -79,7 +79,7 @@ export async function setUserStatusAction(userId: string, status: UserStatus): P
 
 export async function markNotificationsReadAction() {
   const s = await requireSession();
-  markAllRead(s.id);
+  await markNotificationsReadApp(s.id);
   revalidatePath("/notifications");
 }
 

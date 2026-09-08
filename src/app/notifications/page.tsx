@@ -1,8 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { loadProfile, loadUnread } from "@/lib/app-data";
-import { listNotifications } from "@/lib/notifications";
+import { loadNotifications, loadProfile, loadUnread } from "@/lib/app-data";
 import { markNotificationsReadAction } from "@/actions/admin";
 import { StageDisc, StagePage, StageTitle, StageTrack, ghostBtn } from "@/components/layout/StagePage";
 import { avatarPreset } from "@/lib/format";
@@ -25,7 +24,7 @@ export default async function NotificationsPage({
   const session = await getSession();
   if (!session) redirect("/login?next=/notifications");
   const profile = await loadProfile(session.id);
-  const items = listNotifications(session.id);
+  const items = await loadNotifications(session.id);
   const unread = await loadUnread(session.id);
 
   const sp = await searchParams;
@@ -77,7 +76,13 @@ export default async function NotificationsPage({
           <p className="text-sm text-white/80">目前沒有通知。</p>
         ) : (
           items.map((n) => {
-            const payload = JSON.parse(n.payload || "{}") as { message?: string };
+            let message = n.type;
+            try {
+              const payload = JSON.parse(n.payload || "{}") as { message?: string };
+              if (payload.message) message = payload.message;
+            } catch {
+              /* keep type */
+            }
             return (
               <article
                 key={n.id}
@@ -85,7 +90,7 @@ export default async function NotificationsPage({
                   n.is_read ? "border-white/35 text-white/80" : "border-white text-white"
                 }`}
               >
-                <p className="font-medium">{payload.message || n.type}</p>
+                <p className="font-medium">{message}</p>
                 <p className="mt-1 text-xs text-white/70">
                   {formatDateTime(n.created_at)} · {relativeFromNow(n.created_at)}
                 </p>
