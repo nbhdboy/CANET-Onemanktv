@@ -97,12 +97,21 @@ function mapCard(row: Record<string, unknown>): RequestCardData | null {
   };
 }
 
-async function writeClient() {
-  return (await createSupabaseServerClient()) ?? createSupabaseServiceClient();
+function writeClient() {
+  const admin = createSupabaseServiceClient();
+  if (!admin) throw new Error("尚未設定 Supabase 寫入金鑰。");
+  return admin;
 }
 
 async function readClient() {
-  return (await createSupabaseServerClient()) ?? createSupabaseServiceClient();
+  return createSupabaseServiceClient() ?? (await createSupabaseServerClient());
+}
+
+function toTimestamptz(iso: string) {
+  const value = iso.includes("T") ? iso : iso.replace(" ", "T") + "Z";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new Error("開唱時間格式不正確。");
+  return date.toISOString();
 }
 
 export async function assertCanCreateOrApplySupabase(userId: string) {
@@ -127,12 +136,12 @@ export async function createSupabaseRequest(input: {
   estimatedTotal?: number | null;
 }) {
   await assertCanCreateOrApplySupabase(input.userId);
-  if (isPast(input.singAt)) throw new Error("開唱時間必須是未來。");
+  const singAt = toTimestamptz(input.singAt);
+  if (isPast(singAt)) throw new Error("開唱時間必須是未來。");
   if (!input.genres.length) throw new Error("請至少選擇一種音樂類型。");
   if (input.note.length > 200) throw new Error("額外需求最多 200 字。");
 
-  const client = (await writeClient()) ?? createSupabaseServiceClient();
-  if (!client) throw new Error("尚未設定 Supabase。");
+  const client = writeClient();
 
   const { data: venue, error: venueError } = await client
     .from("ktv_venues")
@@ -149,22 +158,22 @@ export async function createSupabaseRequest(input: {
     id,
     initiator_id: input.userId,
     venue_id: input.venueId,
-    sing_at: input.singAt,
-    duration_hours: input.durationHours,
+    sing_at: singAt,
+    duration_hours: Number(input.durationHours),
     music_genres: input.genres,
     preferences: input.preferences,
     note: input.note.trim() || null,
-    estimated_total_cost_2p: input.estimatedTotal ?? null,
+    estimated_total_cost_2p:
+      input.estimatedTotal == null || Number.isNaN(input.estimatedTotal)
+        ? null
+        : Number(input.estimatedTotal),
     status: "OPEN",
   };
 
-  let error = (await client.from("sing_requests").insert(payload)).error;
-  if (error) {
-    const admin = createSupabaseServiceClient();
-    if (admin) error = (await admin.from("sing_requests").insert(payload)).error;
-  }
+  const { data, error } = await client.from("sing_requests").insert(payload).select("id").maybeSingle();
   if (error) throw new Error(error.message);
-  return id;
+  if (!data?.id) throw new Error("發布失敗，請再試一次。");
+  return String(data.id);
 }
 
 export async function fetchSupabaseRequestCard(id: string): Promise<RequestCardData | null> {

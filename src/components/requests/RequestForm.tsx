@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState, type ReactNode } from "react";
+import { useActionState, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createRequestAction } from "@/actions/match";
@@ -67,6 +67,7 @@ export function RequestForm({
   const [genres, setGenres] = useState<string[]>([]);
   const [prefs, setPrefs] = useState<string[]>([]);
   const [state, formAction, pending] = useActionState(createRequestAction, init);
+  const [formError, setFormError] = useState("");
 
   const citiesForBrand = useMemo(
     () =>
@@ -117,6 +118,14 @@ export function RequestForm({
 
       <form
         action={formAction}
+        onSubmit={(e: FormEvent<HTMLFormElement>) => {
+          if (!genres.length) {
+            e.preventDefault();
+            setFormError("請至少選擇一種音樂類型。");
+            return;
+          }
+          setFormError("");
+        }}
         className="relative mx-auto w-full max-w-6xl px-4 pb-28 pt-6 lg:px-10 lg:pb-16 lg:pt-10"
         style={{ colorScheme: "light" }}
       >
@@ -323,9 +332,10 @@ export function RequestForm({
                           name="genres"
                           value={g}
                           checked={on}
-                          onChange={() =>
-                            setGenres((cur) => (cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g]))
-                          }
+                          onChange={() => {
+                            setFormError("");
+                            setGenres((cur) => (cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g]));
+                          }}
                           className="h-4 w-4 min-h-0"
                           style={{ minHeight: 0 }}
                         />
@@ -400,7 +410,11 @@ export function RequestForm({
               </label>
             </Track>
 
-            {state.error ? <p className="text-sm text-amber-100">{state.error}</p> : null}
+            {formError || state.error ? (
+              <p className="rounded-2xl bg-black/35 px-4 py-3 text-sm font-medium text-amber-100" role="alert">
+                {formError || state.error}
+              </p>
+            ) : null}
             <button
               type="submit"
               disabled={pending}

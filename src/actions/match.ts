@@ -28,6 +28,17 @@ function fail(e: unknown): ActionResult {
   return { ok: false, error: gateError(msg) };
 }
 
+function rethrowIfRedirect(e: unknown): void {
+  if (
+    typeof e === "object" &&
+    e &&
+    "digest" in e &&
+    String((e as { digest?: unknown }).digest).includes("NEXT_REDIRECT")
+  ) {
+    throw e;
+  }
+}
+
 export async function createRequestAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     const session = await requireSession();
@@ -47,7 +58,7 @@ export async function createRequestAction(_: ActionResult, formData: FormData): 
     revalidatePath("/");
     redirect(`/requests/${id}`);
   } catch (e) {
-    if (typeof e === "object" && e && "digest" in e) throw e;
+    rethrowIfRedirect(e);
     return fail(e);
   }
 }
@@ -77,7 +88,7 @@ export async function acceptAction(applicationId: string): Promise<ActionResult>
         : `/matches/${matchId}`,
     );
   } catch (e) {
-    if (typeof e === "object" && e && "digest" in e) throw e;
+    rethrowIfRedirect(e);
     return fail(e);
   }
 }
@@ -113,7 +124,7 @@ export async function mockPayAction(paymentId: string): Promise<ActionResult> {
     revalidatePath(`/matches/${matchId}`);
     redirect(`/matches/${matchId}/success`);
   } catch (e) {
-    if (typeof e === "object" && e && "digest" in e) throw e;
+    rethrowIfRedirect(e);
     track("payment_failed", undefined, {});
     return fail(e);
   }
