@@ -8,6 +8,11 @@ import { AVATAR_PRESETS } from "@/lib/constants";
 import { gateError } from "@/lib/format";
 import type { ActionResult } from "@/lib/types";
 
+function filledOrKeep(raw: FormDataEntryValue | null, current: string | null | undefined) {
+  const next = String(raw || "").trim();
+  return next || current || null;
+}
+
 export async function onboardingAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const session = await requireSession();
   try {
@@ -31,10 +36,11 @@ export async function onboardingAction(_: ActionResult, formData: FormData): Pro
 export async function updateContactsAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     const session = await requireSession();
+    const existing = await loadContacts(session.id);
     await saveContactsApp(session.id, {
-      line_id: String(formData.get("lineId") || "") || null,
-      instagram_handle: String(formData.get("instagram") || "") || null,
-      threads_handle: String(formData.get("threads") || "") || null,
+      line_id: filledOrKeep(formData.get("lineId"), existing?.line_id),
+      instagram_handle: filledOrKeep(formData.get("instagram"), existing?.instagram_handle),
+      threads_handle: filledOrKeep(formData.get("threads"), existing?.threads_handle),
     });
     const c = await loadContacts(session.id);
     if (!c?.line_id && !c?.instagram_handle && !c?.threads_handle) {

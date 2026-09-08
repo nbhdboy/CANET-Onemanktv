@@ -54,7 +54,7 @@ export function SettingsForms({
       </StageTrack>
 
       <StageTrack n="02" title="私人聯絡方式">
-        <form action={cAction} className="space-y-4">
+        <form action={cAction} className="space-y-4" key={`${lineId}|${instagram}|${threads}`}>
           <p className="text-sm text-white/80">只有媒合成功後，對方才看得到這些資料。</p>
           <input name="lineId" defaultValue={lineId} placeholder="LINE ID" className={field} />
           <input name="instagram" defaultValue={instagram} placeholder="Instagram" className={field} />
