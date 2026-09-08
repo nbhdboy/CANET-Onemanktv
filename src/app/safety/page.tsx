@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getProfile } from "@/lib/users";
+import { loadProfile } from "@/lib/app-data";
 import { listMyBlocks } from "@/lib/safety";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
 import { avatarPreset } from "@/lib/format";
@@ -23,7 +23,7 @@ export default async function SafetyPage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login?next=/safety");
-  const profile = getProfile(session.id);
+  const profile = await loadProfile(session.id);
   const blocks = listMyBlocks(session.id);
 
   const sp = await searchParams;

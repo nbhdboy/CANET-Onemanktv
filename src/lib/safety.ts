@@ -1,6 +1,7 @@
 import { getDb, nid, track } from "./db";
 import { nowIso } from "./time";
 import { isBlockedEither } from "./users";
+import { useSupabaseApp } from "./runtime";
 
 export function blockUser(blockerId: string, blockedId: string) {
   if (blockerId === blockedId) throw new Error("不能封鎖自己。");
@@ -18,6 +19,7 @@ export function unblockUser(blockerId: string, blockedId: string) {
 }
 
 export function listMyBlocks(userId: string) {
+  if (useSupabaseApp()) return [];
   return getDb()
     .prepare(
       `SELECT b.blocked_id, b.created_at, p.nickname, p.avatar_url

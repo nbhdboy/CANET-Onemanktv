@@ -1,12 +1,12 @@
 import { OnboardingForm } from "@/components/auth/OnboardingForm";
 import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { getProfile } from "@/lib/users";
+import { loadProfile } from "@/lib/app-data";
 
 export default async function OnboardingPage() {
   const session = await getSession();
   if (!session) redirect("/login");
-  const profile = getProfile(session.id);
+  const profile = await loadProfile(session.id);
   if (profile?.profile_completed) redirect("/");
 
   return (

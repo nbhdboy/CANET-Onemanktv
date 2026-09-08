@@ -103,6 +103,50 @@ export function seedVenueId(v: Pick<SeedVenue, "brand_id" | "city" | "name">) {
   return `${v.brand_id}-${v.city}-${v.name}`;
 }
 
+const SEED_BRANDS = [
+  {
+    id: "cashbox",
+    name: "錢櫃",
+    booking_url: "https://www.cashboxparty.com/",
+    logo_url: "🎤",
+    enabled: 1,
+  },
+  {
+    id: "holiday",
+    name: "好樂迪",
+    booking_url: "https://www.holiday.com.tw/",
+    logo_url: "🎵",
+    enabled: 1,
+  },
+  {
+    id: "star",
+    name: "星聚點",
+    booking_url: "https://www.star-ktv.com/",
+    logo_url: "⭐",
+    enabled: 1,
+  },
+] as const;
+
+export function seedCatalog() {
+  const venues = sortVenues(
+    SEED_VENUES.map((v) => ({
+      id: seedVenueId(v),
+      brand_id: v.brand_id,
+      name: v.name,
+      city: v.city,
+      district: v.district,
+      address: v.address,
+      enabled: 1,
+      created_at: "",
+    })),
+  );
+  return {
+    brands: [...SEED_BRANDS],
+    venues,
+    cities: sortCities(venues.map((v) => v.city)),
+  };
+}
+
 export function cityRank(city: string) {
   const i = (CITY_ORDER as readonly string[]).indexOf(city);
   return i === -1 ? 999 : i;

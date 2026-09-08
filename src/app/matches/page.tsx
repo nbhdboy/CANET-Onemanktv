@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { MatchesBoard } from "@/components/match/MatchesBoard";
 import { getSession } from "@/lib/session";
-import { getProfile } from "@/lib/users";
+import { loadProfile } from "@/lib/app-data";
 import { listMyApplications, listMyInitiated, listMyMatches } from "@/lib/match";
 import { canReview } from "@/lib/reviews";
 import {
@@ -22,7 +22,7 @@ export default async function MatchesPage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login?next=/matches");
-  const profile = getProfile(session.id);
+  const profile = await loadProfile(session.id);
 
   const sp = await searchParams;
   const fromQuery = parseHeroAge(typeof sp.age === "string" ? sp.age : null);

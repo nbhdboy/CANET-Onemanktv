@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getProfile } from "@/lib/users";
+import { loadProfile } from "@/lib/app-data";
 import {
   adminKpis,
   listReportsAdmin,
@@ -12,14 +12,16 @@ import { getBrands, getVenues } from "@/lib/match";
 import { saveConfigForm, updateBrandForm, upsertVenueForm } from "@/actions/admin";
 import { ReportButtons, UserStatusButtons } from "@/components/admin/AdminButtons";
 import { formatTwd } from "@/lib/format";
+import { useSupabaseApp } from "@/lib/runtime";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const session = await getSession();
   if (!session) redirect("/login");
-  const me = getProfile(session.id);
+  const me = await loadProfile(session.id);
   if (!me?.is_admin) redirect("/");
+  if (useSupabaseApp()) redirect("/");
   const kpis = adminKpis();
   const users = listUsersAdmin();
   const reports = listReportsAdmin();

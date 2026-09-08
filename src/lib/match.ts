@@ -1,10 +1,11 @@
 import { getAllConfig, getConfig, getDb, nid, notify, track } from "./db";
 import { addHours, addMinutes, ageFromBirthYear, isPast, nowIso, taipeiParts, nowUtc } from "./time";
 import { ageBandFromYears, heroByAge } from "./constants";
-import { sortCities, sortVenues } from "./ktv-venues";
+import { sortCities, sortVenues, seedCatalog } from "./ktv-venues";
 import { toPublicProfile, parseJsonArray } from "./format";
 import { ensureDemoAgeFeed } from "./demo-feed";
 import { assertCanCreateOrApply, getProfile, isBlockedEither } from "./users";
+import { useSupabaseApp } from "./runtime";
 import type {
   KtvBrand,
   KtvVenue,
@@ -17,6 +18,7 @@ import type {
 } from "./types";
 
 export function runMaintenance() {
+  if (useSupabaseApp()) return;
   const db = getDb();
   const now = nowIso();
   db.prepare(
@@ -92,6 +94,7 @@ export function runMaintenance() {
 }
 
 export function getBrands(includeDisabled = false): KtvBrand[] {
+  if (useSupabaseApp()) return seedCatalog().brands as KtvBrand[];
   const sql = includeDisabled
     ? `SELECT * FROM ktv_brands ORDER BY name`
     : `SELECT * FROM ktv_brands WHERE enabled = 1 ORDER BY name`;
@@ -99,6 +102,11 @@ export function getBrands(includeDisabled = false): KtvBrand[] {
 }
 
 export function getVenues(brandId?: string, includeDisabled = false): KtvVenue[] {
+  if (useSupabaseApp()) {
+    const all = seedCatalog().venues;
+    const rows = brandId ? all.filter((v) => v.brand_id === brandId) : all;
+    return includeDisabled ? rows : rows.filter((v) => v.enabled === 1);
+  }
   if (brandId) {
     return sortVenues(
       getDb()
@@ -116,6 +124,7 @@ export function getVenues(brandId?: string, includeDisabled = false): KtvVenue[]
 }
 
 export function getCities(): string[] {
+  if (useSupabaseApp()) return seedCatalog().cities;
   const rows = getDb()
     .prepare(`SELECT DISTINCT city FROM ktv_venues WHERE enabled = 1`)
     .all() as Array<{ city: string }>;
@@ -143,6 +152,7 @@ export type FeedFilters = {
 };
 
 export function listFeed(filters: FeedFilters, viewerId?: string | null): RequestCardData[] {
+  if (useSupabaseApp()) return [];
   runMaintenance();
   try {
     ensureDemoAgeFeed();
@@ -688,6 +698,7 @@ export function settleMockPayment(userId: string, paymentId: string) {
 }
 
 export function getMatchForUser(userId: string, matchId: string) {
+  if (useSupabaseApp()) return null;
   runMaintenance();
   const match = getDb()
     .prepare(`SELECT * FROM matches WHERE id = ?`)
@@ -734,6 +745,7 @@ export function getBrandForRequest(requestId: string): KtvBrand | undefined {
 }
 
 export function listMyApplications(userId: string) {
+  if (useSupabaseApp()) return [];
   runMaintenance();
   return getDb()
     .prepare(
@@ -750,6 +762,7 @@ export function listMyApplications(userId: string) {
 }
 
 export function listMyInitiated(userId: string) {
+  if (useSupabaseApp()) return [];
   runMaintenance();
   return getDb()
     .prepare(
@@ -765,6 +778,7 @@ export function listMyInitiated(userId: string) {
 }
 
 export function listMyMatches(userId: string) {
+  if (useSupabaseApp()) return [];
   runMaintenance();
   return getDb()
     .prepare(

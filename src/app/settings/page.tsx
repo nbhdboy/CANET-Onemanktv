@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getOwnContacts, getProfile } from "@/lib/users";
+import { loadContacts, loadProfile } from "@/lib/app-data";
 import { SettingsForms } from "@/components/settings/SettingsForms";
 import { StageDisc, StagePage, StageTitle } from "@/components/layout/StagePage";
 import { avatarPreset } from "@/lib/format";
@@ -23,8 +23,8 @@ export default async function SettingsPage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login?next=/settings");
-  const profile = getProfile(session.id);
-  const contacts = getOwnContacts(session.id);
+  const profile = await loadProfile(session.id);
+  const contacts = await loadContacts(session.id);
 
   const sp = await searchParams;
   const fromQuery = parseHeroAge(typeof sp.age === "string" ? sp.age : null);

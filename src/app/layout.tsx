@@ -4,8 +4,7 @@ import "./globals.css";
 import { headers } from "next/headers";
 import { AppChrome } from "@/components/layout/AppChrome";
 import { getSession } from "@/lib/session";
-import { getProfile } from "@/lib/users";
-import { unreadCount } from "@/lib/notifications";
+import { loadProfile, loadUnread } from "@/lib/app-data";
 import { APP_NAME, APP_TAGLINE } from "@/lib/constants";
 
 const inter = Inter({
@@ -45,8 +44,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   const headerList = await headers();
   const initialPath = headerList.get("x-kplus1-path") || "/";
   const session = await getSession();
-  const profile = session ? getProfile(session.id) : null;
-  const unread = session ? unreadCount(session.id) : 0;
+  const profile = session ? await loadProfile(session.id) : null;
+  const unread = session ? await loadUnread(session.id) : 0;
 
   return (
     <html

@@ -2,10 +2,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ProfileBoard } from "@/components/profile/ProfileBoard";
 import { getSession } from "@/lib/session";
-import { getProfile } from "@/lib/users";
+import { loadProfile, loadUnread } from "@/lib/app-data";
 import { reviewTagStats } from "@/lib/reviews";
 import { accountAgeLabel, ageFromBirthYear } from "@/lib/time";
-import { unreadCount } from "@/lib/notifications";
 import {
   HERO_AGE_COOKIE,
   ageBandFromYears,
@@ -22,7 +21,7 @@ export default async function ProfilePage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login?next=/profile");
-  const profile = getProfile(session.id);
+  const profile = await loadProfile(session.id);
   if (!profile) redirect("/login?next=/profile");
 
   const sp = await searchParams;
@@ -34,7 +33,7 @@ export default async function ProfilePage({
       : null;
 
   const stats = reviewTagStats(session.id);
-  const unread = unreadCount(session.id);
+  const unread = await loadUnread(session.id);
 
   return (
     <ProfileBoard

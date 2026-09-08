@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getProfile } from "@/lib/users";
-import { listNotifications, unreadCount } from "@/lib/notifications";
+import { loadProfile, loadUnread } from "@/lib/app-data";
+import { listNotifications } from "@/lib/notifications";
 import { markNotificationsReadAction } from "@/actions/admin";
 import { StageDisc, StagePage, StageTitle, StageTrack, ghostBtn } from "@/components/layout/StagePage";
 import { avatarPreset } from "@/lib/format";
@@ -24,9 +24,9 @@ export default async function NotificationsPage({
 }) {
   const session = await getSession();
   if (!session) redirect("/login?next=/notifications");
-  const profile = getProfile(session.id);
+  const profile = await loadProfile(session.id);
   const items = listNotifications(session.id);
-  const unread = unreadCount(session.id);
+  const unread = await loadUnread(session.id);
 
   const sp = await searchParams;
   const fromQuery = parseHeroAge(typeof sp.age === "string" ? sp.age : null);

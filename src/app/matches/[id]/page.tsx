@@ -7,7 +7,7 @@ import {
   getPayments,
   getRequestCard,
 } from "@/lib/match";
-import { getProfile } from "@/lib/users";
+import { loadProfile } from "@/lib/app-data";
 import { MockCheckout } from "@/components/match/MockCheckout";
 import { UnlockedContacts } from "@/components/match/UnlockedContacts";
 import { BookingPanel } from "@/components/match/BookingPanel";
@@ -32,7 +32,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
   if (!request) notFound();
   const counterpartId =
     match.initiator_id === session.id ? match.participant_id : match.initiator_id;
-  const counterpart = getProfile(counterpartId);
+  const counterpart = await loadProfile(counterpartId);
   const myPay = getMyPayment(match.id, session.id);
   const allPay = getPayments(match.id);
   const brand = getBrandForRequest(match.request_id);

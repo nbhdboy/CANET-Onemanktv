@@ -4,6 +4,7 @@ import { getDb, nid, track } from "./db";
 import { ageFromBirthYear, nowIso } from "./time";
 import { hasContact } from "./format";
 import type { PrivateContacts, Profile, UserStatus } from "./types";
+import { useSupabaseApp } from "./runtime";
 
 export function getProfile(id: string): Profile | undefined {
   return getDb()
@@ -200,6 +201,7 @@ export function assertCanCreateOrApply(userId: string) {
 }
 
 export function isBlockedEither(a: string, b: string) {
+  if (useSupabaseApp()) return false;
   const row = getDb()
     .prepare(
       `SELECT 1 FROM blocks

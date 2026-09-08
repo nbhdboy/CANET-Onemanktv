@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProfile } from "@/lib/users";
+import { loadProfile } from "@/lib/app-data";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
 import { listReviewsForUser, reviewTagStats } from "@/lib/reviews";
@@ -16,7 +16,7 @@ export default async function PublicProfilePage({ params }: { params: IdParams }
   const { id } = await params;
   const session = await getSession();
   if (session && isBlockedEither(session.id, id)) notFound();
-  const profile = getProfile(id);
+  const profile = await loadProfile(id);
   if (!profile || profile.status === "BANNED") notFound();
   const stats = reviewTagStats(id);
   const reviews = listReviewsForUser(id);

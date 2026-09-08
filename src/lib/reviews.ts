@@ -2,6 +2,7 @@ import { getDb, nid, notify, track } from "./db";
 import { nowIso, parseUtc } from "./time";
 import { getMatchForUser } from "./match";
 import type { ReviewRecord } from "./types";
+import { useSupabaseApp } from "./runtime";
 
 export function canReview(userId: string, matchId: string) {
   const match = getMatchForUser(userId, matchId);
@@ -76,12 +77,16 @@ export function submitReview(input: {
 }
 
 export function listReviewsForUser(userId: string): ReviewRecord[] {
+  if (useSupabaseApp()) return [];
   return getDb()
     .prepare(`SELECT * FROM reviews WHERE reviewee_id = ? ORDER BY created_at DESC`)
     .all(userId) as ReviewRecord[];
 }
 
 export function reviewTagStats(userId: string) {
+  if (useSupabaseApp()) {
+    return { counts: {} as Record<string, number>, pct: () => 0, total: 0, noShowCount: 0 };
+  }
   const reviews = listReviewsForUser(userId);
   const counts: Record<string, number> = {};
   for (const r of reviews) {

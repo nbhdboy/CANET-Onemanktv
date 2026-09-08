@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { createSession } from "@/lib/session";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { ensureSupabaseProfile, fetchSupabaseProfile } from "@/lib/supabase/profiles";
 import { ensureOAuthUser, getProfile } from "@/lib/users";
 import { safeNextPath } from "@/lib/auth-redirect";
+import { useSupabaseApp } from "@/lib/runtime";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -25,18 +27,39 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser();
   if (!user?.email) return NextResponse.redirect(fail);
 
-  const local = ensureOAuthUser(user.id, user.email);
-  const profile = getProfile(local.id);
-  if (profile?.status === "BANNED" || profile?.status === "SUSPENDED") {
-    const blocked = new URL("/login", origin);
-    blocked.searchParams.set(
-      "error",
-      profile.status === "BANNED" ? "banned" : "suspended",
-    );
-    return NextResponse.redirect(blocked);
-  }
+  try {
+    if (useSupabaseApp()) {
+      const profile =
+        (await fetchSupabaseProfile(user.id)) ?? (await ensureSupabaseProfile(user.id));
+      if (profile?.status === "BANNED" || profile?.status === "SUSPENDED") {
+        const blocked = new URL("/login", origin);
+        blocked.searchParams.set(
+          "error",
+          profile.status === "BANNED" ? "banned" : "suspended",
+        );
+        return NextResponse.redirect(blocked);
+      }
+      await createSession({ id: user.id, email: user.email });
+      const dest = profile?.profile_completed ? next : "/onboarding";
+      return NextResponse.redirect(new URL(dest, origin));
+    }
 
-  await createSession({ id: local.id, email: local.email });
-  const dest = profile?.profile_completed ? next : "/onboarding";
-  return NextResponse.redirect(new URL(dest, origin));
+    const local = ensureOAuthUser(user.id, user.email);
+    const profile = getProfile(local.id);
+    if (profile?.status === "BANNED" || profile?.status === "SUSPENDED") {
+      const blocked = new URL("/login", origin);
+      blocked.searchParams.set(
+        "error",
+        profile.status === "BANNED" ? "banned" : "suspended",
+      );
+      return NextResponse.redirect(blocked);
+    }
+
+    await createSession({ id: local.id, email: local.email });
+    const dest = profile?.profile_completed ? next : "/onboarding";
+    return NextResponse.redirect(new URL(dest, origin));
+  } catch (err) {
+    console.error("google callback", err);
+    return NextResponse.redirect(fail);
+  }
 }

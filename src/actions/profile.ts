@@ -3,13 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/session";
-import {
-  completeOnboarding,
-  getOwnContacts,
-  getProfile,
-  saveOwnContacts,
-  updateProfileFields,
-} from "@/lib/users";
+import { completeOnboardingApp, loadContacts, loadProfile, saveContactsApp, updatePublicProfileApp } from "@/lib/app-data";
 import { AVATAR_PRESETS } from "@/lib/constants";
 import { gateError } from "@/lib/format";
 import type { ActionResult } from "@/lib/types";
@@ -17,7 +11,7 @@ import type { ActionResult } from "@/lib/types";
 export async function onboardingAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const session = await requireSession();
   try {
-    completeOnboarding({
+    await completeOnboardingApp({
       userId: session.id,
       nickname: String(formData.get("nickname") || ""),
       realName: String(formData.get("realName") || ""),
@@ -36,12 +30,12 @@ export async function onboardingAction(_: ActionResult, formData: FormData): Pro
 
 export async function updateContactsAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const session = await requireSession();
-  saveOwnContacts(session.id, {
+  await saveContactsApp(session.id, {
     line_id: String(formData.get("lineId") || "") || null,
     instagram_handle: String(formData.get("instagram") || "") || null,
     threads_handle: String(formData.get("threads") || "") || null,
   });
-  const c = getOwnContacts(session.id);
+  const c = await loadContacts(session.id);
   if (!c?.line_id && !c?.instagram_handle && !c?.threads_handle) {
     return { ok: false, error: "請先設定至少一種聯絡方式，再開始媒合。" };
   }
@@ -51,7 +45,7 @@ export async function updateContactsAction(_: ActionResult, formData: FormData):
 
 export async function updatePublicProfileAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const session = await requireSession();
-  updateProfileFields(session.id, {
+  await updatePublicProfileApp(session.id, {
     nickname: String(formData.get("nickname") || ""),
     avatar_url: String(formData.get("avatar") || "mic-purple"),
   });
@@ -63,7 +57,7 @@ export async function meBundle() {
   const session = await requireSession();
   return {
     session,
-    profile: getProfile(session.id),
-    contacts: getOwnContacts(session.id),
+    profile: await loadProfile(session.id),
+    contacts: await loadContacts(session.id),
   };
 }
