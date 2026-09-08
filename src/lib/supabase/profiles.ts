@@ -74,14 +74,36 @@ export async function saveSupabaseContacts(
 ) {
   const supabase = await dataClient();
   if (!supabase) throw new Error("尚未設定 Supabase。");
+
+  const existingRes = await supabase
+    .from("user_private_contacts")
+    .select("user_id, line_id, instagram_handle, threads_handle")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (existingRes.error) throw new Error(existingRes.error.message);
+  const existing = existingRes.data;
+
+  const keep = (next: string | null | undefined, prev: string | null | undefined) => {
+    const value = typeof next === "string" ? next.trim() : next;
+    if (value) return value;
+    return prev ?? null;
+  };
+
   const row = {
     user_id: userId,
-    line_id: data.line_id ?? null,
-    instagram_handle: data.instagram_handle ?? null,
-    threads_handle: data.threads_handle ?? null,
+    line_id: keep(data.line_id, existing?.line_id),
+    instagram_handle: keep(data.instagram_handle, existing?.instagram_handle),
+    threads_handle: keep(data.threads_handle, existing?.threads_handle),
     updated_at: new Date().toISOString(),
   };
-  const { error } = await supabase.from("user_private_contacts").upsert(row, { onConflict: "user_id" });
+
+  if (existing) {
+    const { error } = await supabase.from("user_private_contacts").update(row).eq("user_id", userId);
+    if (error) throw new Error(error.message);
+    return;
+  }
+
+  const { error } = await supabase.from("user_private_contacts").insert(row);
   if (error) throw new Error(error.message);
 }
 

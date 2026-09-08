@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { updateContactsAction, updatePublicProfileAction } from "@/actions/profile";
 import { AVATAR_PRESETS } from "@/lib/constants";
 import { StageTrack, ghostBtn } from "@/components/layout/StagePage";
@@ -26,6 +26,15 @@ export function SettingsForms({
 }) {
   const [p, pAction, pPending] = useActionState(updatePublicProfileAction, init);
   const [c, cAction, cPending] = useActionState(updateContactsAction, init);
+  const [line, setLine] = useState(lineId);
+  const [ig, setIg] = useState(instagram);
+  const [th, setTh] = useState(threads);
+
+  useEffect(() => {
+    setLine(lineId);
+    setIg(instagram);
+    setTh(threads);
+  }, [lineId, instagram, threads]);
 
   return (
     <div className="space-y-8" style={{ colorScheme: "light" }}>
@@ -54,11 +63,29 @@ export function SettingsForms({
       </StageTrack>
 
       <StageTrack n="02" title="私人聯絡方式">
-        <form action={cAction} className="space-y-4" key={`${lineId}|${instagram}|${threads}`}>
-          <p className="text-sm text-white/80">只有媒合成功後，對方才看得到這些資料。</p>
-          <input name="lineId" defaultValue={lineId} placeholder="LINE ID" className={field} />
-          <input name="instagram" defaultValue={instagram} placeholder="Instagram" className={field} />
-          <input name="threads" defaultValue={threads} placeholder="Threads" className={field} />
+        <form action={cAction} className="space-y-4">
+          <p className="text-sm text-white/80">只有媒合成功後，對方才看得到這些資料。空白欄位會保留已儲存的資料。</p>
+          <input
+            name="lineId"
+            value={line}
+            onChange={(e) => setLine(e.target.value)}
+            placeholder="LINE ID"
+            className={field}
+          />
+          <input
+            name="instagram"
+            value={ig}
+            onChange={(e) => setIg(e.target.value)}
+            placeholder="Instagram"
+            className={field}
+          />
+          <input
+            name="threads"
+            value={th}
+            onChange={(e) => setTh(e.target.value)}
+            placeholder="Threads"
+            className={field}
+          />
           {c.error ? <p className="text-sm text-amber-100">{c.error}</p> : null}
           {c.ok ? <p className="text-sm text-white">已儲存。</p> : null}
           <button type="submit" disabled={cPending} className={ghostBtn}>
