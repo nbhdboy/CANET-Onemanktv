@@ -1,5 +1,9 @@
 import type { PrivateContacts, Profile, UserStatus } from "@/lib/types";
-import { createSupabaseServerClient } from "./server";
+import { createSupabaseServerClient, createSupabaseServiceClient } from "./server";
+
+async function dataClient() {
+  return createSupabaseServiceClient() ?? (await createSupabaseServerClient());
+}
 
 function flag(value: unknown) {
   return value === true || value === 1 || value === "1" ? 1 : 0;
@@ -29,7 +33,7 @@ function mapProfile(row: Record<string, unknown>): Profile {
 }
 
 export async function fetchSupabaseProfile(id: string): Promise<Profile | undefined> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await dataClient();
   if (!supabase) return undefined;
   const { data, error } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
   if (error || !data) return undefined;
@@ -39,7 +43,7 @@ export async function fetchSupabaseProfile(id: string): Promise<Profile | undefi
 export async function ensureSupabaseProfile(id: string): Promise<Profile | undefined> {
   const existing = await fetchSupabaseProfile(id);
   if (existing) return existing;
-  const supabase = await createSupabaseServerClient();
+  const supabase = await dataClient();
   if (!supabase) return undefined;
   await supabase.from("profiles").insert({ id });
   await supabase.from("user_private_contacts").insert({ user_id: id });
@@ -47,7 +51,7 @@ export async function ensureSupabaseProfile(id: string): Promise<Profile | undef
 }
 
 export async function fetchSupabaseContacts(userId: string): Promise<PrivateContacts | undefined> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await dataClient();
   if (!supabase) return undefined;
   const { data, error } = await supabase
     .from("user_private_contacts")
@@ -68,17 +72,16 @@ export async function saveSupabaseContacts(
   userId: string,
   data: Partial<Omit<PrivateContacts, "user_id">>,
 ) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await dataClient();
   if (!supabase) throw new Error("尚未設定 Supabase。");
-  const { error } = await supabase
-    .from("user_private_contacts")
-    .update({
-      line_id: data.line_id ?? null,
-      instagram_handle: data.instagram_handle ?? null,
-      threads_handle: data.threads_handle ?? null,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("user_id", userId);
+  const row = {
+    user_id: userId,
+    line_id: data.line_id ?? null,
+    instagram_handle: data.instagram_handle ?? null,
+    threads_handle: data.threads_handle ?? null,
+    updated_at: new Date().toISOString(),
+  };
+  const { error } = await supabase.from("user_private_contacts").upsert(row, { onConflict: "user_id" });
   if (error) throw new Error(error.message);
 }
 
@@ -94,13 +97,15 @@ export async function updateSupabaseProfile(
     profile_completed?: boolean;
   },
 ) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await dataClient();
   if (!supabase) throw new Error("尚未設定 Supabase。");
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("profiles")
     .update({ ...fields, updated_at: new Date().toISOString() })
-    .eq("id", userId);
+    .eq("id", userId)
+    .select("id");
   if (error) throw new Error(error.message);
+  if (!data?.length) throw new Error("找不到這張名片，請重新登入後再試。");
 }
 
 export async function completeSupabaseOnboarding(input: {

@@ -29,28 +29,37 @@ export async function onboardingAction(_: ActionResult, formData: FormData): Pro
 }
 
 export async function updateContactsAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const session = await requireSession();
-  await saveContactsApp(session.id, {
-    line_id: String(formData.get("lineId") || "") || null,
-    instagram_handle: String(formData.get("instagram") || "") || null,
-    threads_handle: String(formData.get("threads") || "") || null,
-  });
-  const c = await loadContacts(session.id);
-  if (!c?.line_id && !c?.instagram_handle && !c?.threads_handle) {
-    return { ok: false, error: "請先設定至少一種聯絡方式，再開始媒合。" };
+  try {
+    const session = await requireSession();
+    await saveContactsApp(session.id, {
+      line_id: String(formData.get("lineId") || "") || null,
+      instagram_handle: String(formData.get("instagram") || "") || null,
+      threads_handle: String(formData.get("threads") || "") || null,
+    });
+    const c = await loadContacts(session.id);
+    if (!c?.line_id && !c?.instagram_handle && !c?.threads_handle) {
+      return { ok: false, error: "請先設定至少一種聯絡方式，再開始媒合。" };
+    }
+    revalidatePath("/settings");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: gateError(e instanceof Error ? e.message : "請再試一次") };
   }
-  revalidatePath("/settings");
-  return { ok: true };
 }
 
 export async function updatePublicProfileAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
-  const session = await requireSession();
-  await updatePublicProfileApp(session.id, {
-    nickname: String(formData.get("nickname") || ""),
-    avatar_url: String(formData.get("avatar") || "mic-purple"),
-  });
-  revalidatePath("/profile");
-  return { ok: true };
+  try {
+    const session = await requireSession();
+    await updatePublicProfileApp(session.id, {
+      nickname: String(formData.get("nickname") || ""),
+      avatar_url: String(formData.get("avatar") || "mic-purple"),
+    });
+    revalidatePath("/profile");
+    revalidatePath("/settings");
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: gateError(e instanceof Error ? e.message : "請再試一次") };
+  }
 }
 
 export async function meBundle() {

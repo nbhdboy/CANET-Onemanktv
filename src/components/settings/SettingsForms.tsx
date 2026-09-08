@@ -45,6 +45,7 @@ export function SettingsForms({
               ))}
             </select>
           </label>
+          {p.error ? <p className="text-sm text-amber-100">{p.error}</p> : null}
           {p.ok ? <p className="text-sm text-white">已儲存。</p> : null}
           <button type="submit" disabled={pPending} className={ghostBtn}>
             {pPending ? "儲存中…" : "更新公開資料"}
