@@ -11,7 +11,7 @@ import {
   heroByAge,
   type HeroAge,
 } from "@/lib/constants";
-import { preferredCity, sortCities, venuesMatching } from "@/lib/ktv-venues";
+import { preferredCity, sortCities, venueOptionLabel, venuesMatching } from "@/lib/ktv-venues";
 import { avatarPreset, durationLabel, formatTwd } from "@/lib/format";
 import type { ActionResult, KtvBrand, KtvVenue } from "@/lib/types";
 
@@ -265,7 +265,7 @@ export function RequestForm({
                 >
                   {filtered.map((v) => (
                     <option key={v.id} value={v.id}>
-                      {v.name}
+                      {venueOptionLabel(v)}
                     </option>
                   ))}
                 </select>

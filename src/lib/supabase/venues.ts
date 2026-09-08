@@ -32,6 +32,7 @@ async function syncCatalog(client: SupabaseClient) {
     address: v.address,
     enabled: true,
   }));
+  const officialIds = new Set(venues.map((v) => v.id));
 
   const brandRes = await client.from("ktv_brands").upsert(brands, { onConflict: "id" });
   if (brandRes.error) {
@@ -49,6 +50,30 @@ async function syncCatalog(client: SupabaseClient) {
       code: venueRes.error.code,
     });
     throw new Error(venueRes.error.message);
+  }
+
+  const existingRes = await client.from("ktv_venues").select("id");
+  if (existingRes.error) {
+    logAppError("ktv.venues_list_failed", {
+      message: existingRes.error.message,
+      code: existingRes.error.code,
+    });
+  } else {
+    const stale = (existingRes.data ?? [])
+      .map((row) => String(row.id))
+      .filter((id) => !officialIds.has(id));
+    if (stale.length) {
+      const disableRes = await client.from("ktv_venues").update({ enabled: false }).in("id", stale);
+      if (disableRes.error) {
+        logAppError("ktv.venues_disable_failed", {
+          message: disableRes.error.message,
+          code: disableRes.error.code,
+          staleCount: stale.length,
+        });
+      } else {
+        logApp("ktv.venues_disabled", { staleCount: stale.length });
+      }
+    }
   }
 
   logApp("ktv.catalog_synced", { brandCount: brands.length, venueCount: venues.length });
