@@ -1,0 +1,196 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { logoutAction } from "@/actions/auth";
+import { heroByAge, type HeroAge } from "@/lib/constants";
+import { avatarPreset } from "@/lib/format";
+import { Stars } from "@/components/ui/Stars";
+import type { ReactNode } from "react";
+
+export function ProfileBoard({
+  nickname,
+  avatarUrl,
+  ageBand,
+  isAdmin,
+  ratingAvg,
+  ratingCount,
+  matchCount,
+  accountAge,
+  unread,
+  onTimePct,
+  friendlyPct,
+  singAgainPct,
+}: {
+  nickname: string;
+  avatarUrl?: string | null;
+  ageBand: HeroAge;
+  isAdmin: boolean;
+  ratingAvg: number | null;
+  ratingCount: number;
+  matchCount: number;
+  accountAge: string;
+  unread: number;
+  onTimePct: number;
+  friendlyPct: number;
+  singAgainPct: number;
+}) {
+  const hero = heroByAge(ageBand);
+  const preset = avatarPreset(avatarUrl);
+  const displayName = nickname || "尚未設定暱稱";
+
+  return (
+    <main className="relative min-h-screen text-white" style={{ backgroundColor: hero.bg }}>
+      <div className="grain pointer-events-none absolute inset-0 opacity-35" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-4 right-0 select-none uppercase opacity-[0.12]"
+        style={{
+          fontFamily: "Anton, sans-serif",
+          fontSize: "clamp(80px, 18vw, 200px)",
+          letterSpacing: "-0.06em",
+          lineHeight: 0.8,
+        }}
+      >
+        我的
+      </div>
+
+      <div className="relative mx-auto w-full max-w-6xl px-4 pb-28 pt-6 lg:px-10 lg:pb-16 lg:pt-10">
+        <div className="mb-8 flex items-center justify-between">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/80">
+            K歌 +1 · {hero.label}名片
+          </p>
+          <Link
+            href="/"
+            aria-label="回到找歌友"
+            className="flex h-11 w-11 items-center justify-center rounded-full border border-white/80 text-white transition-colors hover:bg-white hover:text-[#1a1040]"
+          >
+            <ArrowLeft size={18} strokeWidth={2.25} />
+          </Link>
+        </div>
+
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
+          <aside className="compose-poster lg:sticky lg:top-24">
+            <p className="mb-3 text-center text-xs font-semibold tracking-[0.18em] text-white/75">
+              LIVE 名片
+            </p>
+            <div className="relative mx-auto flex h-[400px] max-w-[280px] items-center justify-center">
+              <div
+                aria-hidden
+                className="absolute h-[72%] w-[72%] rounded-full"
+                style={{
+                  background: `radial-gradient(circle, ${preset.from} 0%, transparent 70%)`,
+                }}
+              />
+              <div className="deck-float relative">
+                <article
+                  className="relative flex h-[280px] w-[280px] flex-col items-center justify-center overflow-hidden rounded-full text-center text-white"
+                  style={{
+                    background: `linear-gradient(165deg, ${preset.from} 0%, ${preset.to} 62%, #12081f 100%)`,
+                    boxShadow: "0 22px 50px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.12)",
+                  }}
+                >
+                  <p className="absolute left-1/2 top-6 -translate-x-1/2 rounded-full border border-white/40 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] text-white/90">
+                    {hero.label}
+                  </p>
+                  <span className="text-6xl" aria-hidden>
+                    {preset.emoji}
+                  </span>
+                  <p className="mt-3 px-6 text-xl font-bold leading-tight">{displayName}</p>
+                  <p className="mt-1 text-sm text-white/85">{accountAge}</p>
+                </article>
+              </div>
+            </div>
+          </aside>
+
+          <div className="compose-panel space-y-8">
+            <div>
+              <h1
+                className="uppercase text-white"
+                style={{
+                  fontFamily: "Anton, sans-serif",
+                  fontSize: "clamp(40px, 7vw, 76px)",
+                  letterSpacing: "-0.03em",
+                  lineHeight: 0.9,
+                }}
+              >
+                就是我
+                <br />
+                這位歌友
+              </h1>
+              <p className="mt-3 max-w-md text-sm text-white/88">
+                {ratingCount === 0 ? (
+                  <>🌱 新歌友 · 還沒有評價</>
+                ) : (
+                  <>
+                    <Stars value={ratingAvg} /> · 完成 {matchCount} 次媒合
+                  </>
+                )}
+              </p>
+            </div>
+
+            <Track n="01" title="這張名片">
+              {ratingCount > 0 ? (
+                <p className="text-sm text-white/88">
+                  {onTimePct}% 準時 · {friendlyPct}% 好相處 · {singAgainPct}% 願意再次一起唱
+                </p>
+              ) : (
+                <p className="text-sm text-white/80">唱過幾場之後，準時和好相處會出現在這裡。</p>
+              )}
+              <p className="text-xs text-white/70">
+                真實姓名與社群帳號不會出現在公開資料。
+              </p>
+            </Track>
+
+            <Track n="02" title="帳號入口">
+              <GhostRow href="/settings" label="聯絡方式與設定" cta="打開 →" />
+              <GhostRow
+                href="/notifications"
+                label={`通知中心${unread ? `（${unread}）` : ""}`}
+                cta="打開 →"
+              />
+              <GhostRow href="/safety" label="安全中心" cta="打開 →" />
+              <GhostRow href="/matches" label="媒合與歷史" cta="打開 →" />
+              {isAdmin ? <GhostRow href="/admin" label="Admin 後台" cta="打開 →" /> : null}
+            </Track>
+
+            <Track n="03" title="離席">
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="flex min-h-12 w-full max-w-xs items-center justify-center border border-white text-sm font-semibold tracking-[0.18em] text-white transition-colors hover:bg-white hover:text-[#1a1040]"
+                >
+                  登出
+                </button>
+              </form>
+            </Track>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function Track({ n, title, children }: { n: string; title: string; children: ReactNode }) {
+  return (
+    <section className="border-t border-white/25 pt-5">
+      <p
+        className="mb-3 text-white/55"
+        style={{ fontFamily: "Anton, sans-serif", fontSize: 28, letterSpacing: "0.06em", lineHeight: 1 }}
+      >
+        {n} <span className="ml-2 text-base font-semibold tracking-wide text-white">{title}</span>
+      </p>
+      <div className="space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function GhostRow({ href, label, cta }: { href: string; label: string; cta: string }) {
+  return (
+    <Link
+      href={href}
+      className="group flex min-h-12 items-center justify-between gap-4 border border-white/50 px-5 py-4 text-white transition-colors hover:bg-white hover:text-[#1a1040]"
+    >
+      <span className="font-semibold">{label}</span>
+      <span className="shrink-0 text-sm font-semibold tracking-wide">{cta}</span>
+    </Link>
+  );
+}

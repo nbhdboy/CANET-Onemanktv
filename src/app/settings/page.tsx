@@ -1,0 +1,75 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
+import { getOwnContacts, getProfile } from "@/lib/users";
+import { SettingsForms } from "@/components/settings/SettingsForms";
+import { StageDisc, StagePage, StageTitle } from "@/components/layout/StagePage";
+import { avatarPreset } from "@/lib/format";
+import {
+  HERO_AGE_COOKIE,
+  ageBandFromYears,
+  heroByAge,
+  parseHeroAge,
+} from "@/lib/constants";
+import { ageFromBirthYear } from "@/lib/time";
+import type { Search } from "@/lib/route-types";
+
+export const dynamic = "force-dynamic";
+
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Search;
+}) {
+  const session = await getSession();
+  if (!session) redirect("/login?next=/settings");
+  const profile = getProfile(session.id);
+  const contacts = getOwnContacts(session.id);
+
+  const sp = await searchParams;
+  const fromQuery = parseHeroAge(typeof sp.age === "string" ? sp.age : null);
+  const fromCookie = parseHeroAge((await cookies()).get(HERO_AGE_COOKIE)?.value);
+  const fromProfile =
+    profile?.birth_year_private != null
+      ? ageBandFromYears(ageFromBirthYear(profile.birth_year_private))
+      : null;
+  const ageBand = fromQuery ?? fromCookie ?? fromProfile ?? 20;
+  const preset = avatarPreset(profile?.avatar_url);
+
+  return (
+    <StagePage
+      ageBand={ageBand}
+      watermark="設定"
+      kicker={`K歌 +1 · ${heroByAge(ageBand).label}設定`}
+      liveLabel="LIVE 名片"
+      aside={
+        <StageDisc
+          emoji={preset.emoji}
+          badge="可改"
+          title={profile?.nickname || "歌友"}
+          sub="公開暱稱與頭像"
+          from={preset.from}
+          to={preset.to}
+        />
+      }
+    >
+      <div>
+        <StageTitle>
+          改這張
+          <br />
+          名片
+        </StageTitle>
+        <p className="mt-3 max-w-md text-sm text-white/88">
+          公開資料大家看得到。聯絡方式要媒合成功才會交換。
+        </p>
+      </div>
+      <SettingsForms
+        nickname={profile?.nickname || ""}
+        avatar={profile?.avatar_url || "mic-purple"}
+        lineId={contacts?.line_id || ""}
+        instagram={contacts?.instagram_handle || ""}
+        threads={contacts?.threads_handle || ""}
+      />
+    </StagePage>
+  );
+}
