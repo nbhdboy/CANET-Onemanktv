@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { getDb, nid, track } from "./db";
 import { ageFromBirthYear, nowIso } from "./time";
@@ -19,18 +20,32 @@ export function getUserByEmail(email: string) {
 }
 
 export function createUser(email: string, password: string, adminEmail?: string) {
+  return insertLocalAccount(nid(), email, bcrypt.hashSync(password, 10), adminEmail);
+}
+
+export function ensureOAuthUser(id: string, email: string) {
   const db = getDb();
-  const id = nid();
+  const byId = db
+    .prepare(`SELECT id, email FROM users WHERE id = ?`)
+    .get(id) as { id: string; email: string } | undefined;
+  if (byId) return byId;
+
+  const byEmail = getUserByEmail(email);
+  if (byEmail) return { id: byEmail.id, email: byEmail.email };
+
+  return insertLocalAccount(id, email, bcrypt.hashSync(randomBytes(32).toString("hex"), 10));
+}
+
+function insertLocalAccount(id: string, email: string, passwordHash: string, adminEmail?: string) {
+  const db = getDb();
   const now = nowIso();
-  const hash = bcrypt.hashSync(password, 10);
+  const normalized = email.toLowerCase().trim();
   const isAdmin =
-    email.toLowerCase() === (adminEmail || process.env.ADMIN_EMAIL || "").toLowerCase()
-      ? 1
-      : 0;
+    normalized === (adminEmail || process.env.ADMIN_EMAIL || "").toLowerCase() ? 1 : 0;
   const tx = db.transaction(() => {
     db.prepare(
       `INSERT INTO users (id, email, password_hash, created_at) VALUES (?, ?, ?, ?)`,
-    ).run(id, email.toLowerCase().trim(), hash, now);
+    ).run(id, normalized, passwordHash, now);
     db.prepare(
       `INSERT INTO profiles (
         id, nickname, avatar_url, real_name_private, birth_year_private,
@@ -47,7 +62,7 @@ export function createUser(email: string, password: string, adminEmail?: string)
   });
   tx();
   track("signup_completed", id);
-  return { id, email: email.toLowerCase().trim() };
+  return { id, email: normalized };
 }
 
 export function verifyPassword(hash: string, password: string) {
