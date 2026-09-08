@@ -1,19 +1,20 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import {
-  getBrandForRequest,
-  getMatchForUser,
-  getMyPayment,
-  getPayments,
-  getRequestCard,
-} from "@/lib/match";
-import { loadProfile } from "@/lib/app-data";
+  loadBrandForRequestApp,
+  loadMatchForUserApp,
+  loadMyPaymentApp,
+  loadPaymentsApp,
+  loadProfile,
+  loadRequestCard,
+} from "@/lib/app-data";
 import { MockCheckout } from "@/components/match/MockCheckout";
 import { UnlockedContacts } from "@/components/match/UnlockedContacts";
 import { BookingPanel } from "@/components/match/BookingPanel";
 import { ReviewForm } from "@/components/match/ReviewForm";
 import { SafetyActions } from "@/components/safety/SafetyActions";
 import { canReview } from "@/lib/reviews";
+import { useSupabaseApp } from "@/lib/runtime";
 import { countdownLabel, formatDateTime } from "@/lib/time";
 import { durationLabel } from "@/lib/format";
 import Link from "next/link";
@@ -26,17 +27,20 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
   const session = await getSession();
   if (!session) redirect("/login");
   const { id } = await params;
-  const match = getMatchForUser(session.id, id);
+  const match = await loadMatchForUserApp(session.id, id);
   if (!match) notFound();
-  const request = getRequestCard(match.request_id, session.id);
+  const request = await loadRequestCard(match.request_id, session.id);
   if (!request) notFound();
   const counterpartId =
     match.initiator_id === session.id ? match.participant_id : match.initiator_id;
   const counterpart = await loadProfile(counterpartId);
-  const myPay = getMyPayment(match.id, session.id);
-  const allPay = getPayments(match.id);
-  const brand = getBrandForRequest(match.request_id);
-  const reviewGate = canReview(session.id, match.id);
+  const myPay = await loadMyPaymentApp(match.id, session.id);
+  const allPay = await loadPaymentsApp(match.id);
+  const brand = await loadBrandForRequestApp(match.request_id);
+  const cloud = useSupabaseApp();
+  const reviewGate = cloud
+    ? ({ ok: false as const, reason: "NOT_READY" as const })
+    : canReview(session.id, match.id);
 
   if (match.status === "PENDING_PAYMENT" && myPay?.status === "PENDING") {
     return (

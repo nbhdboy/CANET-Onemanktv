@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { getMatchForUser, getRequestCard } from "@/lib/match";
+import { loadMatchForUserApp, loadRequestCard } from "@/lib/app-data";
 import { MatchConfetti } from "@/components/match/MatchConfetti";
 import { durationLabel } from "@/lib/format";
 import { formatDateTime } from "@/lib/time";
@@ -12,9 +12,9 @@ export default async function MatchSuccessPage({ params }: { params: IdParams })
   const session = await getSession();
   if (!session) redirect("/login");
   const { id } = await params;
-  const match = getMatchForUser(session.id, id);
+  const match = await loadMatchForUserApp(session.id, id);
   if (!match) notFound();
-  const request = getRequestCard(match.request_id, session.id);
+  const request = await loadRequestCard(match.request_id, session.id);
 
   if (match.status === "PENDING_PAYMENT") {
     redirect(`/matches/${id}`);

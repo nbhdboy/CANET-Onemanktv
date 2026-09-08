@@ -4,17 +4,20 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/session";
 import {
-  acceptApplication,
-  rejectApplication,
   cancelRequest,
-  settleMockPayment,
   markBookingDone,
-  getMatchForUser,
   type FeedFilters,
 } from "@/lib/match";
-import { applyToRequestApp, createRequestApp } from "@/lib/app-data";
+import {
+  acceptApplicationApp,
+  applyToRequestApp,
+  createRequestApp,
+  loadMatchForUserApp,
+  loadUnlockedContactsApp,
+  rejectApplicationApp,
+  settleMockPaymentApp,
+} from "@/lib/app-data";
 import { getSession } from "@/lib/session";
-import { getUnlockedCounterpartContacts } from "@/lib/contacts";
 import { submitReview } from "@/lib/reviews";
 import { blockUser, createReport } from "@/lib/safety";
 import { track } from "@/lib/db";
@@ -97,9 +100,16 @@ export async function applyAction(requestId: string): Promise<ActionResult> {
 export async function acceptAction(applicationId: string): Promise<ActionResult> {
   try {
     const session = await requireSession();
-    const matchId = acceptApplication(session.id, applicationId);
+    logApp("accept.start", { userId: session.id, applicationId });
+    const matchId = await acceptApplicationApp(session.id, applicationId);
+    const match = await loadMatchForUserApp(session.id, matchId);
+    logApp("accept.ok", {
+      userId: session.id,
+      applicationId,
+      matchId,
+      status: match?.status ?? null,
+    });
     revalidatePath("/matches");
-    const match = getMatchForUser(session.id, matchId);
     redirect(
       match?.status === "MATCHED"
         ? `/matches/${matchId}/success`
@@ -107,6 +117,10 @@ export async function acceptAction(applicationId: string): Promise<ActionResult>
     );
   } catch (e) {
     rethrowIfRedirect(e);
+    logAppError("accept.failed", {
+      applicationId,
+      message: e instanceof Error ? e.message : String(e),
+    });
     return fail(e);
   }
 }
@@ -114,10 +128,16 @@ export async function acceptAction(applicationId: string): Promise<ActionResult>
 export async function rejectAction(applicationId: string): Promise<ActionResult> {
   try {
     const session = await requireSession();
-    rejectApplication(session.id, applicationId);
+    logApp("reject.start", { userId: session.id, applicationId });
+    await rejectApplicationApp(session.id, applicationId);
+    logApp("reject.ok", { userId: session.id, applicationId });
     revalidatePath("/matches");
     return { ok: true };
   } catch (e) {
+    logAppError("reject.failed", {
+      applicationId,
+      message: e instanceof Error ? e.message : String(e),
+    });
     return fail(e);
   }
 }
@@ -138,7 +158,7 @@ export async function mockPayAction(paymentId: string): Promise<ActionResult> {
   try {
     const session = await requireSession();
     track("payment_started", session.id, { paymentId });
-    const matchId = settleMockPayment(session.id, paymentId);
+    const matchId = await settleMockPaymentApp(session.id, paymentId);
     revalidatePath(`/matches/${matchId}`);
     redirect(`/matches/${matchId}/success`);
   } catch (e) {
@@ -166,7 +186,7 @@ export async function bookingClickAction(matchId: string) {
 
 export async function unlockContactsAction(matchId: string) {
   const session = await requireSession();
-  return getUnlockedCounterpartContacts(session.id, matchId);
+  return loadUnlockedContactsApp(session.id, matchId);
 }
 
 export async function reviewAction(_: ActionResult, formData: FormData): Promise<ActionResult> {

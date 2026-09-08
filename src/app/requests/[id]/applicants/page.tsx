@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
-import { listApplicants } from "@/lib/match";
-import { loadRequestCard } from "@/lib/app-data";
+import { listApplicantsApp, loadRequestCard } from "@/lib/app-data";
 import { Avatar } from "@/components/ui/Avatar";
 import { Stars } from "@/components/ui/Stars";
 import { ApplicantActions } from "@/components/match/ApplicantActions";
 import { listReviewsForUser, topTags } from "@/lib/reviews";
 import { POSITIVE_REVIEW_TAGS, NEGATIVE_REVIEW_TAGS } from "@/lib/constants";
+import { useSupabaseApp } from "@/lib/runtime";
 
 import type { IdParams } from "@/lib/route-types";
 
@@ -19,17 +19,18 @@ export default async function ApplicantsPage({ params }: { params: IdParams }) {
   const { id } = await params;
   const item = await loadRequestCard(id, session.id);
   if (!item || item.initiator.id !== session.id) notFound();
-  const applicants = listApplicants(session.id, id);
+  const applicants = await listApplicantsApp(session.id, id);
   const pending = applicants.filter((a) => a.application.status === "PENDING");
+  const cloud = useSupabaseApp();
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8 space-y-5">
       <h1 className="text-3xl font-bold">{pending.length} 個人想一起唱</h1>
       {applicants.length === 0 && <p className="text-[var(--muted)]">還沒有人申請。把連結分享出去吧。</p>}
       {applicants.map(({ application, profile }) => {
-        const tags = topTags(profile.id);
+        const tags = cloud ? [] : topTags(profile.id);
         const tagLib = [...POSITIVE_REVIEW_TAGS, ...NEGATIVE_REVIEW_TAGS];
-        const reviews = listReviewsForUser(profile.id).slice(0, 2);
+        const reviews = cloud ? [] : listReviewsForUser(profile.id).slice(0, 2);
         return (
           <article key={application.id} className="rounded-3xl bg-white card-float p-5 space-y-3">
             <div className="flex items-center gap-3">

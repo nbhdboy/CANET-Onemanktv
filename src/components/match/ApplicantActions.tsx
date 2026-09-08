@@ -1,24 +1,34 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { acceptAction, rejectAction } from "@/actions/match";
 
 export function ApplicantActions({ applicationId }: { applicationId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const router = useRouter();
 
   async function accept() {
     setPending(true);
+    setError(null);
     const res = await acceptAction(applicationId);
-    if (res && !res.ok) setError(res.error || "無法接受");
-    setPending(false);
+    if (res && !res.ok) {
+      setError(res.error || "無法接受");
+      setPending(false);
+    }
   }
 
   async function reject() {
     setPending(true);
+    setError(null);
     const res = await rejectAction(applicationId);
-    if (!res.ok) setError(res.error || "無法婉拒");
     setPending(false);
+    if (!res.ok) {
+      setError(res.error || "無法婉拒");
+      return;
+    }
+    router.refresh();
   }
 
   return (

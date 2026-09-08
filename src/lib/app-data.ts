@@ -27,6 +27,19 @@ import {
   listSupabaseMyApplications,
   listSupabaseMyInitiated,
 } from "@/lib/supabase/requests";
+import {
+  acceptSupabaseApplication,
+  getSupabaseBrandForRequest,
+  getSupabaseMatchForUser,
+  getSupabaseMyPayment,
+  getSupabasePayments,
+  getSupabaseUnlockedContacts,
+  listSupabaseApplicants,
+  listSupabaseMyMatches,
+  rejectSupabaseApplication,
+  settleSupabaseMockPayment,
+} from "@/lib/supabase/matches";
+import type { MatchRecord, PaymentRecord } from "@/lib/types";
 
 export async function loadProfile(id: string): Promise<Profile | undefined> {
   if (useSupabaseApp()) return fetchSupabaseProfile(id);
@@ -128,9 +141,66 @@ export async function listMyInitiatedApp(userId: string) {
 }
 
 export async function listMyMatchesApp(userId: string) {
-  if (useSupabaseApp()) return [];
+  if (useSupabaseApp()) return listSupabaseMyMatches(userId);
   const { listMyMatches } = await import("@/lib/match");
   return listMyMatches(userId);
+}
+
+export async function listApplicantsApp(userId: string, requestId: string) {
+  if (useSupabaseApp()) return listSupabaseApplicants(userId, requestId);
+  const { listApplicants } = await import("@/lib/match");
+  return listApplicants(userId, requestId);
+}
+
+export async function acceptApplicationApp(userId: string, applicationId: string) {
+  if (useSupabaseApp()) return acceptSupabaseApplication(userId, applicationId);
+  const { acceptApplication } = await import("@/lib/match");
+  return acceptApplication(userId, applicationId);
+}
+
+export async function rejectApplicationApp(userId: string, applicationId: string) {
+  if (useSupabaseApp()) {
+    await rejectSupabaseApplication(userId, applicationId);
+    return;
+  }
+  const { rejectApplication } = await import("@/lib/match");
+  rejectApplication(userId, applicationId);
+}
+
+export async function loadMatchForUserApp(userId: string, matchId: string): Promise<MatchRecord | null> {
+  if (useSupabaseApp()) return getSupabaseMatchForUser(userId, matchId);
+  const { getMatchForUser } = await import("@/lib/match");
+  return getMatchForUser(userId, matchId);
+}
+
+export async function loadPaymentsApp(matchId: string): Promise<PaymentRecord[]> {
+  if (useSupabaseApp()) return getSupabasePayments(matchId);
+  const { getPayments } = await import("@/lib/match");
+  return getPayments(matchId);
+}
+
+export async function loadMyPaymentApp(matchId: string, userId: string) {
+  if (useSupabaseApp()) return getSupabaseMyPayment(matchId, userId);
+  const { getMyPayment } = await import("@/lib/match");
+  return getMyPayment(matchId, userId);
+}
+
+export async function settleMockPaymentApp(userId: string, paymentId: string) {
+  if (useSupabaseApp()) return settleSupabaseMockPayment(userId, paymentId);
+  const { settleMockPayment } = await import("@/lib/match");
+  return settleMockPayment(userId, paymentId);
+}
+
+export async function loadUnlockedContactsApp(viewerId: string, matchId: string) {
+  if (useSupabaseApp()) return getSupabaseUnlockedContacts(viewerId, matchId);
+  const { getUnlockedCounterpartContacts } = await import("@/lib/contacts");
+  return getUnlockedCounterpartContacts(viewerId, matchId);
+}
+
+export async function loadBrandForRequestApp(requestId: string) {
+  if (useSupabaseApp()) return getSupabaseBrandForRequest(requestId);
+  const { getBrandForRequest } = await import("@/lib/match");
+  return getBrandForRequest(requestId);
 }
 
 export async function loadRequestCard(id: string, viewerId?: string | null) {
