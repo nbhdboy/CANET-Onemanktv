@@ -262,3 +262,209 @@ export async function listSupabaseFeed(filters: FeedFilters): Promise<RequestCar
       return true;
     });
 }
+
+export async function applySupabaseRequest(userId: string, requestId: string) {
+  const { profile } = await assertCanCreateOrApplySupabase(userId);
+  const client = writeClient();
+
+  const { data: req, error: reqError } = await client
+    .from("sing_requests")
+    .select("id, initiator_id, status, sing_at")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (reqError) {
+    logAppError("apply.request_lookup_failed", {
+      userId,
+      requestId,
+      message: reqError.message,
+      code: reqError.code,
+    });
+    throw new Error(reqError.message);
+  }
+  if (!req) throw new Error("找不到歌局。");
+  if (req.initiator_id === userId) throw new Error("SELF");
+  if (req.status === "MATCHED" || req.status === "COMPLETED") throw new Error("MATCHED");
+  if (req.status === "EXPIRED") throw new Error("EXPIRED");
+  if (req.status === "CANCELLED") throw new Error("這場歌局已取消。");
+  if (req.status === "MATCH_PENDING") throw new Error("LOCKED");
+  if (req.status !== "OPEN") throw new Error("NOT_OPEN");
+  if (isPast(String(req.sing_at))) throw new Error("EXPIRED");
+
+  const { data: existing, error: existingError } = await client
+    .from("match_applications")
+    .select("id")
+    .eq("request_id", requestId)
+    .eq("applicant_id", userId)
+    .maybeSingle();
+  if (existingError) {
+    logAppError("apply.existing_lookup_failed", {
+      userId,
+      requestId,
+      message: existingError.message,
+      code: existingError.code,
+    });
+    throw new Error(existingError.message);
+  }
+  if (existing) throw new Error("DUPLICATE");
+
+  const id = randomUUID();
+  const now = new Date().toISOString();
+  const { data, error } = await client
+    .from("match_applications")
+    .insert({
+      id,
+      request_id: requestId,
+      applicant_id: userId,
+      status: "PENDING",
+      created_at: now,
+      updated_at: now,
+    })
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    if (error.code === "23505") throw new Error("DUPLICATE");
+    logAppError("apply.insert_failed", {
+      userId,
+      requestId,
+      message: error.message,
+      code: error.code,
+    });
+    throw new Error(error.message);
+  }
+  if (!data?.id) throw new Error("申請失敗，請再試一次。");
+
+  await client.from("notifications").insert({
+    user_id: req.initiator_id,
+    type: "application_received",
+    payload: {
+      requestId,
+      applicationId: data.id,
+      nickname: profile.nickname || "歌友",
+      message: `🎤 ${profile.nickname || "歌友"}想加入你今晚的歌局！`,
+    },
+    is_read: false,
+  });
+
+  logApp("apply.inserted", { userId, requestId, applicationId: data.id });
+  return String(data.id);
+}
+
+export async function listSupabaseMyApplications(userId: string) {
+  const client = await readClient();
+  if (!client) return [];
+  const { data, error } = await client
+    .from("match_applications")
+    .select(
+      `
+      id,
+      request_id,
+      applicant_id,
+      status,
+      created_at,
+      updated_at,
+      sing_requests (
+        sing_at,
+        status,
+        duration_hours,
+        ktv_venues (
+          name,
+          ktv_brands ( name )
+        )
+      )
+    `,
+    )
+    .eq("applicant_id", userId)
+    .order("created_at", { ascending: false });
+  if (error || !data) {
+    if (error) {
+      logAppError("apply.list_mine_failed", { userId, message: error.message, code: error.code });
+    }
+    return [];
+  }
+
+  return data.map((row) => {
+    const request = firstRelation(
+      row.sing_requests as Record<string, unknown> | Record<string, unknown>[] | null,
+    );
+    const venue = request
+      ? firstRelation(request.ktv_venues as Record<string, unknown> | Record<string, unknown>[])
+      : null;
+    const brand = venue
+      ? firstRelation(venue.ktv_brands as Record<string, unknown> | Record<string, unknown>[])
+      : null;
+    return {
+      id: String(row.id),
+      request_id: String(row.request_id),
+      applicant_id: String(row.applicant_id),
+      status: String(row.status),
+      created_at: String(row.created_at),
+      updated_at: String(row.updated_at),
+      sing_at: request ? String(request.sing_at) : "",
+      request_status: request ? String(request.status) : "",
+      duration_hours: request ? Number(request.duration_hours) : 0,
+      brand_name: brand ? String(brand.name) : "",
+      venue_name: venue ? String(venue.name) : "",
+    };
+  });
+}
+
+export async function listSupabaseMyInitiated(userId: string) {
+  const client = await readClient();
+  if (!client) return [];
+  const { data, error } = await client
+    .from("sing_requests")
+    .select(
+      `
+      id,
+      initiator_id,
+      venue_id,
+      sing_at,
+      duration_hours,
+      status,
+      created_at,
+      ktv_venues (
+        name,
+        ktv_brands ( name )
+      ),
+      match_applications ( id, status )
+    `,
+    )
+    .eq("initiator_id", userId)
+    .order("created_at", { ascending: false });
+  if (error || !data) {
+    if (error) {
+      logAppError("request.list_initiated_failed", {
+        userId,
+        message: error.message,
+        code: error.code,
+      });
+    }
+    return [];
+  }
+
+  return data.map((row) => {
+    const venue = firstRelation(
+      row.ktv_venues as Record<string, unknown> | Record<string, unknown>[] | null,
+    );
+    const brand = venue
+      ? firstRelation(venue.ktv_brands as Record<string, unknown> | Record<string, unknown>[])
+      : null;
+    const apps = Array.isArray(row.match_applications) ? row.match_applications : [];
+    const pendingCount = apps.filter(
+      (a) => a && typeof a === "object" && (a as { status?: string }).status === "PENDING",
+    ).length;
+    return {
+      id: String(row.id),
+      initiator_id: String(row.initiator_id),
+      venue_id: String(row.venue_id),
+      sing_at: String(row.sing_at),
+      duration_hours: Number(row.duration_hours),
+      status: String(row.status),
+      created_at: String(row.created_at),
+      brand_name: brand ? String(brand.name) : "",
+      venue_name: venue ? String(venue.name) : "",
+      pending_count: pendingCount,
+    };
+  });
+}

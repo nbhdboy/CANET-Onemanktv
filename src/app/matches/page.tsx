@@ -2,8 +2,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { MatchesBoard } from "@/components/match/MatchesBoard";
 import { getSession } from "@/lib/session";
-import { loadProfile } from "@/lib/app-data";
-import { listMyApplications, listMyInitiated, listMyMatches } from "@/lib/match";
+import {
+  listMyApplicationsApp,
+  listMyInitiatedApp,
+  listMyMatchesApp,
+  loadProfile,
+} from "@/lib/app-data";
+import { useSupabaseApp } from "@/lib/runtime";
 import { canReview } from "@/lib/reviews";
 import {
   HERO_AGE_COOKIE,
@@ -32,9 +37,10 @@ export default async function MatchesPage({
       ? ageBandFromYears(ageFromBirthYear(profile.birth_year_private))
       : null;
 
-  const apps = listMyApplications(session.id);
-  const initiated = listMyInitiated(session.id);
-  const matches = listMyMatches(session.id);
+  const apps = await listMyApplicationsApp(session.id);
+  const initiated = await listMyInitiatedApp(session.id);
+  const matches = await listMyMatchesApp(session.id);
+  const cloud = useSupabaseApp();
 
   const waitingReply = apps.filter((a) => a.status === "PENDING");
   const waitingPay = matches.filter((m) => m.status === "PENDING_PAYMENT");
@@ -48,7 +54,7 @@ export default async function MatchesPage({
     )
     .map((m) => ({
       ...m,
-      reviewable: canReview(session.id, String(m.id)).ok,
+      reviewable: cloud ? false : canReview(session.id, String(m.id)).ok,
     }));
 
   return (

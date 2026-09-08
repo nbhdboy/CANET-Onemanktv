@@ -20,9 +20,12 @@ import type { FeedFilters } from "@/lib/match";
 import type { PrivateContacts, Profile } from "@/lib/types";
 import { getRequestCard, listFeed } from "@/lib/match";
 import {
+  applySupabaseRequest,
   createSupabaseRequest,
   fetchSupabaseRequestCard,
   listSupabaseFeed,
+  listSupabaseMyApplications,
+  listSupabaseMyInitiated,
 } from "@/lib/supabase/requests";
 
 export async function loadProfile(id: string): Promise<Profile | undefined> {
@@ -104,6 +107,30 @@ export async function createRequestApp(input: {
   if (useSupabaseApp()) return createSupabaseRequest(input);
   const { createRequest } = await import("@/lib/match");
   return createRequest(input);
+}
+
+export async function applyToRequestApp(userId: string, requestId: string) {
+  if (useSupabaseApp()) return applySupabaseRequest(userId, requestId);
+  const { applyToRequest } = await import("@/lib/match");
+  return applyToRequest(userId, requestId);
+}
+
+export async function listMyApplicationsApp(userId: string) {
+  if (useSupabaseApp()) return listSupabaseMyApplications(userId);
+  const { listMyApplications } = await import("@/lib/match");
+  return listMyApplications(userId);
+}
+
+export async function listMyInitiatedApp(userId: string) {
+  if (useSupabaseApp()) return listSupabaseMyInitiated(userId);
+  const { listMyInitiated } = await import("@/lib/match");
+  return listMyInitiated(userId);
+}
+
+export async function listMyMatchesApp(userId: string) {
+  if (useSupabaseApp()) return [];
+  const { listMyMatches } = await import("@/lib/match");
+  return listMyMatches(userId);
 }
 
 export async function loadRequestCard(id: string, viewerId?: string | null) {

@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/session";
 import {
-  applyToRequest,
   acceptApplication,
   rejectApplication,
   cancelRequest,
@@ -13,7 +12,7 @@ import {
   getMatchForUser,
   type FeedFilters,
 } from "@/lib/match";
-import { createRequestApp } from "@/lib/app-data";
+import { applyToRequestApp, createRequestApp } from "@/lib/app-data";
 import { getSession } from "@/lib/session";
 import { getUnlockedCounterpartContacts } from "@/lib/contacts";
 import { submitReview } from "@/lib/reviews";
@@ -79,12 +78,18 @@ export async function createRequestAction(_: ActionResult, formData: FormData): 
 export async function applyAction(requestId: string): Promise<ActionResult> {
   try {
     const session = await requireSession();
+    logApp("apply.start", { userId: session.id, requestId });
     track("match_apply_clicked", session.id, { requestId });
-    applyToRequest(session.id, requestId);
+    const applicationId = await applyToRequestApp(session.id, requestId);
+    logApp("apply.ok", { userId: session.id, requestId, applicationId });
     revalidatePath(`/requests/${requestId}`);
     revalidatePath("/matches");
     return { ok: true };
   } catch (e) {
+    logAppError("apply.failed", {
+      requestId,
+      message: e instanceof Error ? e.message : String(e),
+    });
     return fail(e);
   }
 }
