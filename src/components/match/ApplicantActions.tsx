@@ -100,7 +100,7 @@ export function ApplicantActions({ applicationId }: { applicationId: string }) {
           type="button"
           disabled={busy !== null}
           onClick={accept}
-          className={`${ghostBtn} max-w-none! bg-white text-[#1a1040] hover:bg-white/90`}
+          className={`${ghostBtn} max-w-none!`}
         >
           {busy === "accept" ? "接受中…" : "接受 → 去付款"}
         </button>
