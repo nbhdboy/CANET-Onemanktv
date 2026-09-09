@@ -77,6 +77,7 @@ export async function markPaymentPaidAndFulfill(input: {
   paymentId: string;
   transactionId: string;
   bankTransactionId?: string | null;
+  provider?: string;
 }) {
   const supabase = client();
   const { data: pay, error } = await supabase
@@ -97,7 +98,7 @@ export async function markPaymentPaidAndFulfill(input: {
     .from("payments")
     .update({
       status: "PAID",
-      provider: "TAPPAY",
+      provider: input.provider || pay.provider || "TAPPAY",
       transaction_id: input.transactionId,
       bank_transaction_id: input.bankTransactionId ?? pay.bank_transaction_id ?? null,
       paid_at: now,
@@ -127,6 +128,7 @@ export async function markPaymentPaidAndFulfill(input: {
   logApp("payment.tappay_settled", {
     paymentId: input.paymentId,
     matchId: updated.match_id,
+    provider: input.provider || pay.provider,
   });
 
   return { matchId: String(updated.match_id), alreadyPaid: false as const };
@@ -137,6 +139,7 @@ export async function chargeTapPayPayment(input: {
   paymentId: string;
   prime: string;
   buyerEmail: string;
+  method?: "card" | "linepay";
   cardholderName?: string;
   carrier?: string | null;
   buyerIdentifier?: string | null;
@@ -146,6 +149,7 @@ export async function chargeTapPayPayment(input: {
     throw new Error("目前為 MOCK 模式，請使用模擬付款。");
   }
 
+  const method = input.method === "linepay" || input.prime.startsWith("ln_") ? "linepay" : "card";
   const email = input.buyerEmail.trim();
   if (!email || !email.includes("@")) {
     throw new Error("請填寫有效的發票用 Email。");
@@ -182,12 +186,17 @@ export async function chargeTapPayPayment(input: {
   const orderNumber = String(pay.order_number || makeOrderNumber(String(pay.id)));
   const carrier = resolveCarrier(input.carrier);
   const appUrl = getPublicAppUrl();
+  const provider = method === "linepay" ? "TAPPAY_LINEPAY" : "TAPPAY";
+  const backendNotifyUrl =
+    method === "linepay"
+      ? `${appUrl}/api/payments/tappay/linepay-notify`
+      : `${appUrl}/api/payments/tappay/notify`;
 
   const { error: prepError } = await supabase
     .from("payments")
     .update({
       order_number: orderNumber,
-      provider: "TAPPAY",
+      provider,
       buyer_email: email,
       carrier_type: carrier.type,
       carrier_number: "number" in carrier ? carrier.number : null,
@@ -204,14 +213,15 @@ export async function chargeTapPayPayment(input: {
     amount,
     orderNumber,
     details: "K歌+1 媒合服務費",
+    method,
     cardholder: {
       name: input.cardholderName || "",
       email,
       phone_number: "",
     },
     frontendRedirectUrl: `${appUrl}/matches/${pay.match_id}/pay-return?paymentId=${pay.id}`,
-    backendNotifyUrl: `${appUrl}/api/payments/tappay/notify`,
-    threeDomainSecure: true,
+    backendNotifyUrl,
+    threeDomainSecure: method === "card",
   });
 
   if (result.status !== 0) {
@@ -229,16 +239,23 @@ export async function chargeTapPayPayment(input: {
       ok: true as const,
       paymentUrl: result.payment_url,
       orderNumber,
+      method,
     };
+  }
+
+  // LINE Pay 理論上一定會回 payment_url；若無則視為失敗
+  if (method === "linepay") {
+    throw new Error("未取得 LINE Pay 付款網址");
   }
 
   const settled = await markPaymentPaidAndFulfill({
     paymentId: String(pay.id),
     transactionId: result.rec_trade_id || `tappay_${randomUUID().slice(0, 8)}`,
     bankTransactionId: result.bank_transaction_id,
+    provider,
   });
 
-  return { ok: true as const, matchId: settled.matchId, orderNumber };
+  return { ok: true as const, matchId: settled.matchId, orderNumber, method };
 }
 
 export async function settleTapPayNotify(body: {

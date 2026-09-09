@@ -20,6 +20,7 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       paymentId?: string;
       prime?: string;
+      method?: "card" | "linepay";
       buyerEmail?: string;
       cardholderName?: string;
       carrier?: string;
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
       userId: session.id,
       paymentId: body.paymentId,
       prime: body.prime,
+      method: body.method,
       buyerEmail: body.buyerEmail || session.email,
       cardholderName: body.cardholderName,
       carrier: body.carrier,

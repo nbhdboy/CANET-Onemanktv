@@ -17,6 +17,8 @@ export function isLivePayment() {
 export function getTapPayServerConfig() {
   const partnerKey = process.env.TAPPAY_PARTNER_KEY;
   const merchantId = process.env.TAPPAY_MERCHANT_ID;
+  const merchantIdLinePay =
+    process.env.TAPPAY_MERCHANT_ID_LINEPAY || merchantId || "";
   const payByPrimeUrl =
     process.env.TAPPAY_PAY_BY_PRIME_URL ||
     "https://sandbox.tappaysdk.com/tpc/payment/pay-by-prime";
@@ -33,6 +35,7 @@ export function getTapPayServerConfig() {
   return {
     partnerKey,
     merchantId,
+    merchantIdLinePay,
     payByPrimeUrl,
     invoiceApiUrl,
     sellerIdentifier,

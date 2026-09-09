@@ -31,13 +31,20 @@ export async function tapPayPayByPrime(input: {
   cardholder: { phone_number?: string; name?: string; email?: string };
   frontendRedirectUrl: string;
   backendNotifyUrl: string;
+  method?: "card" | "linepay";
   threeDomainSecure?: boolean;
 }): Promise<TapPayChargeResult> {
   const cfg = getTapPayServerConfig();
-  const body = {
+  const isLinePay = input.method === "linepay" || input.prime.startsWith("ln_");
+
+  if (isLinePay && !cfg.merchantIdLinePay) {
+    throw new Error("尚未設定 TAPPAY_MERCHANT_ID_LINEPAY。");
+  }
+
+  const body: Record<string, unknown> = {
     prime: input.prime,
     partner_key: cfg.partnerKey,
-    merchant_id: cfg.merchantId,
+    merchant_id: isLinePay ? cfg.merchantIdLinePay : cfg.merchantId,
     amount: input.amount,
     currency: "TWD",
     details: input.details,
@@ -47,13 +54,17 @@ export async function tapPayPayByPrime(input: {
       email: input.cardholder.email || "",
     },
     order_number: input.orderNumber,
-    bank_transaction_id: generateBankTransactionId(),
-    three_domain_secure: input.threeDomainSecure !== false,
     result_url: {
       frontend_redirect_url: input.frontendRedirectUrl,
       backend_notify_url: input.backendNotifyUrl,
     },
   };
+
+  // LINE Pay 不送 bank_transaction_id / 3DS；信用卡才送
+  if (!isLinePay) {
+    body.bank_transaction_id = generateBankTransactionId();
+    body.three_domain_secure = input.threeDomainSecure !== false;
+  }
 
   const resp = await fetch(cfg.payByPrimeUrl, {
     method: "POST",
@@ -75,6 +86,7 @@ export async function tapPayPayByPrime(input: {
     httpStatus: resp.status,
     status: json.status,
     orderNumber: input.orderNumber,
+    method: isLinePay ? "linepay" : "card",
     hasPaymentUrl: Boolean(json.payment_url),
   });
 
