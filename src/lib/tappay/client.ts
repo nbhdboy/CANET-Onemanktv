@@ -1,6 +1,7 @@
 import { logApp, logAppError } from "@/lib/log";
 import { resolveCarrier, type InvoiceCarrier } from "@/lib/tappay/carrier";
 import { getPublicAppUrl, getTapPayServerConfig } from "@/lib/tappay/env";
+import { tapPayFetch } from "@/lib/tappay/fetch";
 import { splitInclusiveTax } from "@/lib/tappay/tax";
 
 export type TapPayChargeResult = {
@@ -68,7 +69,7 @@ export async function tapPayPayByPrime(input: {
     if (input.remember) body.remember = true;
   }
 
-  const resp = await fetch(cfg.payByPrimeUrl, {
+  const resp = await tapPayFetch(cfg.payByPrimeUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -171,7 +172,7 @@ export async function tapPayIssueTaxableInvoice(input: {
   }
 
   try {
-    const resp = await fetch(cfg.invoiceApiUrl, {
+    const resp = await tapPayFetch(cfg.invoiceApiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

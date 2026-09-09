@@ -1,6 +1,7 @@
 import { logApp, logAppError } from "@/lib/log";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { getPublicAppUrl, getTapPayServerConfig } from "@/lib/tappay/env";
+import { tapPayFetch } from "@/lib/tappay/fetch";
 import type { TapPayChargeResult } from "@/lib/tappay/client";
 
 export type PublicSavedCard = {
@@ -163,7 +164,7 @@ export async function bindTapPayCard(input: {
   const appUrl = getPublicAppUrl();
   const orderNumber = makeBindOrderNumber();
 
-  const resp = await fetch(cfg.bindCardUrl, {
+  const resp = await tapPayFetch(cfg.bindCardUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -455,7 +456,7 @@ export async function removeSavedCard(userId: string) {
   }
 
   const cfg = getTapPayServerConfig();
-  const resp = await fetch(cfg.removeCardUrl, {
+  const resp = await tapPayFetch(cfg.removeCardUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -530,7 +531,7 @@ export async function tapPayPayByToken(input: {
     },
   };
 
-  const resp = await fetch(cfg.payByTokenUrl, {
+  const resp = await tapPayFetch(cfg.payByTokenUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
