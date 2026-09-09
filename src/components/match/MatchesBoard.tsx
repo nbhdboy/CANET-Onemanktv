@@ -1,9 +1,13 @@
+"use client";
+
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { avatarPreset } from "@/lib/format";
 import { formatDateTime } from "@/lib/time";
-import type { ReactNode } from "react";
 
 type Row = Record<string, unknown>;
 
@@ -26,6 +30,8 @@ export function MatchesBoard({
   matched: Row[];
   ended: Array<Row & { reviewable: boolean }>;
 }) {
+  const [navLoading, setNavLoading] = useState(false);
+  const router = useRouter();
   const hero = heroByAge(ageBand);
   const preset = avatarPreset(avatarUrl);
   const live = pendingRequests.length + waitingReply.length + waitingPay.length + matched.length;
@@ -39,6 +45,16 @@ export function MatchesBoard({
           : live > 0
             ? "進行中"
             : "歌單";
+
+  function go(href: string) {
+    if (navLoading) return;
+    setNavLoading(true);
+    router.push(href);
+  }
+
+  if (navLoading) {
+    return <EqualizerLoader />;
+  }
 
   return (
     <main className="relative min-h-screen text-white" style={{ backgroundColor: hero.bg }}>
@@ -145,6 +161,7 @@ export function MatchesBoard({
                     title={`${String(r.brand_name)} ${String(r.venue_name)}`}
                     sub={`${Number(r.pending_count)} 個人想一起唱 · ${formatDateTime(String(r.sing_at))}`}
                     cta="查看申請者 →"
+                    onNavigate={go}
                   />
                 ))
               )}
@@ -161,6 +178,7 @@ export function MatchesBoard({
                     title={`${String(a.brand_name)} ${String(a.venue_name)}`}
                     sub={`${formatDateTime(String(a.sing_at))} · 等待發起人回覆`}
                     cta="查看歌局 →"
+                    onNavigate={go}
                   />
                 ))
               )}
@@ -177,6 +195,7 @@ export function MatchesBoard({
                     title={`${String(m.brand_name)} ${String(m.venue_name)}`}
                     sub="再一步就可以交換聯絡方式啦 🎤"
                     cta="去付款 →"
+                    onNavigate={go}
                   />
                 ))
               )}
@@ -193,6 +212,7 @@ export function MatchesBoard({
                     title={`${String(m.brand_name)} ${String(m.venue_name)}`}
                     sub={`${formatDateTime(String(m.sing_at))} · 聯絡方式已解鎖`}
                     cta="查看聯絡方式 →"
+                    onNavigate={go}
                   />
                 ))
               )}
@@ -209,6 +229,7 @@ export function MatchesBoard({
                     title={`${String(m.brand_name)} ${String(m.venue_name)}`}
                     sub={`${endedLabel(String(m.status))}${m.reviewable ? " · 可以評價" : ""}`}
                     cta="查看紀錄 →"
+                    onNavigate={go}
                   />
                 ))
               )}
@@ -264,15 +285,21 @@ function MatchRow({
   title,
   sub,
   cta,
+  onNavigate,
 }: {
   href: string;
   title: string;
   sub: string;
   cta: string;
+  onNavigate: (href: string) => void;
 }) {
   return (
-    <Link
+    <a
       href={href}
+      onClick={(e) => {
+        e.preventDefault();
+        onNavigate(href);
+      }}
       className="group flex min-h-12 items-center justify-between gap-4 border border-white/50 px-5 py-4 text-white transition-colors hover:bg-white hover:text-[#1a1040]"
     >
       <span>
@@ -280,6 +307,6 @@ function MatchRow({
         <span className="mt-1 block text-sm text-white/80 group-hover:text-[#1a1040]/70">{sub}</span>
       </span>
       <span className="shrink-0 text-sm font-semibold tracking-wide">{cta}</span>
-    </Link>
+    </a>
   );
 }
