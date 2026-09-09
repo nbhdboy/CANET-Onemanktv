@@ -32,12 +32,18 @@ export async function POST(req: Request) {
       hasTradeId: Boolean(body.rec_trade_id),
     });
 
-    if (body.order_number?.startsWith("BIND")) {
+    if (body.order_number?.startsWith("BIND") || body.rec_trade_id) {
       const bindResult = await settleBindCardNotify(body);
-      if (!bindResult.ok && !("ignored" in bindResult && bindResult.ignored)) {
-        return NextResponse.json(bindResult, { status: 404 });
+      if ("ignored" in bindResult && bindResult.ignored && !body.order_number?.startsWith("BIND")) {
+        // 不是綁卡暫存，繼續走付款 notify
+      } else {
+        if (!bindResult.ok && !("ignored" in bindResult && bindResult.ignored)) {
+          return NextResponse.json(bindResult, { status: 404 });
+        }
+        if (bindResult.ok || body.order_number?.startsWith("BIND")) {
+          return NextResponse.json(bindResult);
+        }
       }
-      return NextResponse.json(bindResult);
     }
 
     const result = await settleTapPayNotify(body);

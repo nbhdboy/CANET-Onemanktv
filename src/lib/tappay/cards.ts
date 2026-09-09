@@ -30,7 +30,8 @@ function brandFromType(type: unknown): string | null {
 }
 
 function makeBindOrderNumber() {
-  return `BIND${Date.now().toString(36)}`.slice(0, 20);
+  // 與 CANET 一致用 BIND_ 前綴，方便辨識與對帳
+  return `BIND_${Date.now().toString(36)}`.slice(0, 20);
 }
 
 function generateBankTransactionId() {
@@ -41,6 +42,18 @@ function generateBankTransactionId() {
     `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const rand = pad(Math.floor(Math.random() * 100));
   return `ESUN${date}${rand}`;
+}
+
+function parseExpiry(expiryDate: unknown): { month: string | null; year: string | null } {
+  const raw = String(expiryDate || "");
+  // TapPay 常見格式 YYYYMM（與 CANET 相同）
+  if (raw.length >= 6) {
+    return { year: raw.slice(2, 4), month: raw.slice(4, 6) };
+  }
+  if (raw.length >= 4) {
+    return { month: raw.slice(0, 2), year: raw.slice(2, 4) };
+  }
+  return { month: null, year: null };
 }
 
 export async function getPublicSavedCard(userId: string): Promise<PublicSavedCard | null> {
@@ -91,19 +104,14 @@ async function upsertUserCard(input: {
 function extractCardSecret(raw: Record<string, unknown>) {
   const secret = (raw.card_secret || {}) as Record<string, unknown>;
   const info = (raw.card_info || {}) as Record<string, unknown>;
+  const expiry = parseExpiry(info.expiry_date);
   return {
     cardKey: typeof secret.card_key === "string" ? secret.card_key : null,
     cardToken: typeof secret.card_token === "string" ? secret.card_token : null,
     lastFour: typeof info.last_four === "string" ? info.last_four : null,
     brand: brandFromType(info.type),
-    expiryMonth:
-      info.expiry_date && String(info.expiry_date).length >= 4
-        ? String(info.expiry_date).slice(0, 2)
-        : null,
-    expiryYear:
-      info.expiry_date && String(info.expiry_date).length >= 4
-        ? String(info.expiry_date).slice(2, 4)
-        : null,
+    expiryMonth: expiry.month,
+    expiryYear: expiry.year,
   };
 }
 
@@ -169,6 +177,12 @@ export async function bindTapPayCard(input: {
   const supabase = client();
 
   if (json.payment_url) {
+    logApp("tappay.bind_card_3ds", {
+      userId: input.userId,
+      orderNumber,
+      hasCardSecret: Boolean(card.cardKey && card.cardToken),
+      lastFour: card.lastFour,
+    });
     const { error } = await supabase.from("bind_card_temp_orders").upsert(
       {
         order_number: orderNumber,
@@ -224,19 +238,37 @@ export async function settleBindCardNotify(body: {
   card_info?: Record<string, unknown>;
 }) {
   const orderNumber = body.order_number?.trim();
-  if (!orderNumber?.startsWith("BIND")) {
-    return { ok: false as const, ignored: true as const };
-  }
+  const recTradeId = body.rec_trade_id?.trim();
+  const isBindOrder = Boolean(orderNumber?.startsWith("BIND"));
 
   const supabase = client();
-  const { data: temp, error } = await supabase
-    .from("bind_card_temp_orders")
-    .select("*")
-    .eq("order_number", orderNumber)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
+  let temp: Record<string, unknown> | null = null;
+
+  if (isBindOrder && orderNumber) {
+    const { data, error } = await supabase
+      .from("bind_card_temp_orders")
+      .select("*")
+      .eq("order_number", orderNumber)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    temp = data as Record<string, unknown> | null;
+  }
+
+  if (!temp && recTradeId) {
+    const { data, error } = await supabase
+      .from("bind_card_temp_orders")
+      .select("*")
+      .eq("rec_trade_id", recTradeId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    temp = data as Record<string, unknown> | null;
+  }
+
   if (!temp) {
-    logAppError("tappay.bind_notify_unknown", { orderNumber });
+    if (!isBindOrder) {
+      return { ok: false as const, ignored: true as const };
+    }
+    logAppError("tappay.bind_notify_unknown", { orderNumber, recTradeId });
     return { ok: false as const, error: "bind temp not found" };
   }
 
@@ -257,7 +289,12 @@ export async function settleBindCardNotify(body: {
   const cardKey = fromNotify.cardKey || (temp.card_key ? String(temp.card_key) : null);
   const cardToken = fromNotify.cardToken || (temp.card_token ? String(temp.card_token) : null);
   if (!cardKey || !cardToken) {
-    logAppError("tappay.bind_notify_missing_secret", { orderNumber });
+    logAppError("tappay.bind_notify_missing_secret", {
+      orderNumber: temp.order_number,
+      recTradeId,
+      hasTempKey: Boolean(temp.card_key),
+      hasNotifySecret: Boolean(body.card_secret),
+    });
     return { ok: false as const, error: "missing card secret" };
   }
 
@@ -265,17 +302,18 @@ export async function settleBindCardNotify(body: {
     userId: String(temp.user_id),
     cardKey,
     cardToken,
-    lastFour: fromNotify.lastFour || temp.last_four,
-    brand: fromNotify.brand || temp.brand,
-    expiryMonth: fromNotify.expiryMonth || temp.expiry_month,
-    expiryYear: fromNotify.expiryYear || temp.expiry_year,
+    lastFour: fromNotify.lastFour || (temp.last_four ? String(temp.last_four) : null),
+    brand: fromNotify.brand || (temp.brand ? String(temp.brand) : null),
+    expiryMonth:
+      fromNotify.expiryMonth || (temp.expiry_month ? String(temp.expiry_month) : null),
+    expiryYear: fromNotify.expiryYear || (temp.expiry_year ? String(temp.expiry_year) : null),
   });
 
   await supabase
     .from("bind_card_temp_orders")
     .update({
       status: "paid",
-      rec_trade_id: body.rec_trade_id || temp.rec_trade_id,
+      rec_trade_id: recTradeId || temp.rec_trade_id,
       card_key: cardKey,
       card_token: cardToken,
       tappay_status: 0,
@@ -286,9 +324,93 @@ export async function settleBindCardNotify(body: {
 
   logApp("tappay.bind_card_notify_saved", {
     userId: temp.user_id,
-    orderNumber,
+    orderNumber: temp.order_number,
   });
   return { ok: true as const, userId: String(temp.user_id) };
+}
+
+/**
+ * 3DS frontend redirect 成功時補完綁卡（不等 notify，或 notify 漏送時）。
+ * 安全：僅允許該 user 自己的 order，且 status 必須為 0。
+ */
+export async function completeBindFromRedirect(input: {
+  userId: string;
+  orderNumber: string;
+  recTradeId?: string | null;
+  status?: string | number | null;
+}) {
+  if (Number(input.status) !== 0) {
+    return { ok: false as const, error: "綁卡未成功" };
+  }
+
+  const existing = await getPublicSavedCard(input.userId);
+  if (existing) {
+    return { ok: true as const, already: true as const };
+  }
+
+  const supabase = client();
+  let query = supabase
+    .from("bind_card_temp_orders")
+    .select("*")
+    .eq("user_id", input.userId)
+    .eq("order_number", input.orderNumber);
+
+  const { data: temp, error } = await query.maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!temp) {
+    return { ok: false as const, error: "找不到綁卡暫存" };
+  }
+
+  if (temp.status === "paid" && temp.card_key && temp.card_token) {
+    await upsertUserCard({
+      userId: input.userId,
+      cardKey: String(temp.card_key),
+      cardToken: String(temp.card_token),
+      lastFour: temp.last_four ? String(temp.last_four) : null,
+      brand: temp.brand ? String(temp.brand) : null,
+      expiryMonth: temp.expiry_month ? String(temp.expiry_month) : null,
+      expiryYear: temp.expiry_year ? String(temp.expiry_year) : null,
+    });
+    return { ok: true as const };
+  }
+
+  if (!temp.card_key || !temp.card_token) {
+    logAppError("tappay.bind_redirect_missing_secret", {
+      orderNumber: input.orderNumber,
+      recTradeId: input.recTradeId,
+    });
+    return {
+      ok: false as const,
+      error: "暫存缺少卡片憑證，請確認綁卡 API 是否回傳 card_secret",
+    };
+  }
+
+  await upsertUserCard({
+    userId: input.userId,
+    cardKey: String(temp.card_key),
+    cardToken: String(temp.card_token),
+    lastFour: temp.last_four ? String(temp.last_four) : null,
+    brand: temp.brand ? String(temp.brand) : null,
+    expiryMonth: temp.expiry_month ? String(temp.expiry_month) : null,
+    expiryYear: temp.expiry_year ? String(temp.expiry_year) : null,
+  });
+
+  await supabase
+    .from("bind_card_temp_orders")
+    .update({
+      status: "paid",
+      rec_trade_id: input.recTradeId || temp.rec_trade_id,
+      tappay_status: 0,
+      tappay_msg: "frontend_redirect",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", temp.id);
+
+  logApp("tappay.bind_card_redirect_saved", {
+    userId: input.userId,
+    orderNumber: input.orderNumber,
+  });
+  return { ok: true as const };
 }
 
 export async function removeSavedCard(userId: string) {
