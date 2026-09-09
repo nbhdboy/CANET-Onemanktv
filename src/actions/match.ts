@@ -87,8 +87,9 @@ export async function applyAction(requestId: string): Promise<ActionResult> {
     logApp("apply.ok", { userId: session.id, requestId, applicationId });
     revalidatePath(`/requests/${requestId}`);
     revalidatePath("/matches");
-    return { ok: true };
+    redirect("/matches");
   } catch (e) {
+    rethrowIfRedirect(e);
     logAppError("apply.failed", {
       requestId,
       message: e instanceof Error ? e.message : String(e),

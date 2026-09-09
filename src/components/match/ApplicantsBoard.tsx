@@ -32,14 +32,7 @@ export function ApplicantsBoard({
   const hero = heroByAge(ageBand);
 
   if (loading) {
-    return (
-      <main className="relative min-h-screen text-white" style={{ backgroundColor: hero.bg }}>
-        <div className="grain pointer-events-none absolute inset-0 opacity-35" />
-        <div className="relative flex min-h-screen items-center justify-center px-4">
-          <EqualizerLoader tone="light" label="載入中" />
-        </div>
-      </main>
-    );
+    return <EqualizerLoader />;
   }
 
   return (

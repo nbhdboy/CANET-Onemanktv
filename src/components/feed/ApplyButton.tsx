@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { applyAction } from "@/actions/match";
-import { useRouter } from "next/navigation";
+
+function isNextNavigationError(e: unknown) {
+  return (
+    typeof e === "object" &&
+    e !== null &&
+    "digest" in e &&
+    (String((e as { digest?: unknown }).digest).includes("NEXT_REDIRECT") ||
+      String((e as { digest?: unknown }).digest).includes("NEXT_HTTP_ERROR_FALLBACK"))
+  );
+}
 
 export function ApplyButton({
   requestId,
@@ -14,20 +23,26 @@ export function ApplyButton({
   const [bounce, setBounce] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const router = useRouter();
 
   async function onClick() {
+    if (pending) return;
     setBounce(true);
     setPending(true);
     setMsg(null);
-    const res = await applyAction(requestId);
-    setPending(false);
-    setTimeout(() => setBounce(false), 500);
-    if (!res.ok) {
-      setMsg(res.error || "申請失敗");
-      return;
+    try {
+      const res = await applyAction(requestId);
+      if (res && !res.ok) {
+        setMsg(res.error || "申請失敗");
+        setPending(false);
+        setTimeout(() => setBounce(false), 500);
+      }
+      // 成功時 server action 會 redirect 到 /matches；保持「送出中…」直到頁面切換
+    } catch (e) {
+      if (isNextNavigationError(e)) throw e;
+      setMsg("申請失敗，請再試一次。");
+      setPending(false);
+      setTimeout(() => setBounce(false), 500);
     }
-    router.push("/matches");
   }
 
   return (
