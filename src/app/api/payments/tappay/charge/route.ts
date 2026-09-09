@@ -27,6 +27,8 @@ export async function POST(req: Request) {
       carrier?: string;
       buyerIdentifier?: string;
       buyerName?: string;
+      saveCard?: boolean;
+      replaceExistingCard?: boolean;
     };
 
     if (!body.paymentId) {
@@ -47,6 +49,8 @@ export async function POST(req: Request) {
       carrier: body.carrier,
       buyerIdentifier: body.buyerIdentifier,
       buyerName: body.buyerName,
+      saveCard: body.saveCard,
+      replaceExistingCard: body.replaceExistingCard,
     });
 
     return NextResponse.json(result);

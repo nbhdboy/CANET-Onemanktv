@@ -37,10 +37,14 @@ export function TapPayCheckout({
   const [carrier, setCarrier] = useState("");
   const [buyerIdentifier, setBuyerIdentifier] = useState("");
   const [buyerName, setBuyerName] = useState("");
+  const [saveCard, setSaveCard] = useState(false);
+  const [replaceExistingCard, setReplaceExistingCard] = useState(false);
 
   useEffect(() => {
     setCard(savedCard);
     if (savedCard) setMethod("saved_card");
+    setSaveCard(false);
+    setReplaceExistingCard(false);
   }, [savedCard]);
 
   useEffect(() => {
@@ -175,6 +179,10 @@ export function TapPayCheckout({
     setPending(true);
 
     try {
+      if (method === "card" && saveCard && card && !replaceExistingCard) {
+        throw new Error("已有存卡，請勾選覆蓋或取消同步儲存。");
+      }
+
       if (method === "saved_card") {
         if (!card) throw new Error("尚未設定存卡");
         await charge({ method: "saved_card", cardId: card.id });
@@ -204,7 +212,12 @@ export function TapPayCheckout({
           if (primeResult.status !== 0 || !primeResult.card?.prime) {
             throw new Error(primeResult.msg || "無法取得卡片資訊");
           }
-          await charge({ method: "card", prime: primeResult.card.prime });
+          await charge({
+            method: "card",
+            prime: primeResult.card.prime,
+            saveCard,
+            replaceExistingCard: saveCard && Boolean(card) ? replaceExistingCard : false,
+          });
         } catch (e) {
           setError(e instanceof Error ? e.message : "付款失敗");
           setPending(false);
@@ -221,7 +234,9 @@ export function TapPayCheckout({
     !pending &&
     (method === "linepay" ||
       method === "saved_card" ||
-      (method === "card" && canGetPrime));
+      (method === "card" &&
+        canGetPrime &&
+        !(saveCard && card && !replaceExistingCard)));
 
   return (
     <div className="rounded-3xl bg-white card-float p-6 space-y-4">
@@ -343,6 +358,39 @@ export function TapPayCheckout({
             <div id="card-ccv" className="h-11 rounded-xl border px-3 flex items-center" />
           </div>
           {!ready && <p className="text-xs text-[var(--muted)]">正在載入付款元件…</p>}
+
+          <label className="mt-2 flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={saveCard}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                setSaveCard(checked);
+                if (!checked) setReplaceExistingCard(false);
+              }}
+            />
+            <span>付款成功後，同步儲存這張信用卡（每人限一張）</span>
+          </label>
+
+          {saveCard && card ? (
+            <div className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 space-y-2">
+              <p>
+                你已有存卡 {card.brand || "信用卡"} ······ {card.last_four}。要覆蓋成這張新卡嗎？
+              </p>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={replaceExistingCard}
+                  onChange={(e) => setReplaceExistingCard(e.target.checked)}
+                />
+                <span>是，覆蓋既有存卡</span>
+              </label>
+              {saveCard && !replaceExistingCard ? (
+                <p className="text-xs text-rose-600">請勾選覆蓋，或取消「同步儲存」。</p>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       )}
 

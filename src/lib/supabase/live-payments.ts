@@ -3,7 +3,13 @@ import { logApp, logAppError } from "@/lib/log";
 import { isPast } from "@/lib/time";
 import { resolveCarrier } from "@/lib/tappay/carrier";
 import { tapPayIssueTaxableInvoice, tapPayPayByPrime } from "@/lib/tappay/client";
-import { getSavedCardSecrets, tapPayPayByToken } from "@/lib/tappay/cards";
+import {
+  extractCardSecret,
+  getPublicSavedCard,
+  getSavedCardSecrets,
+  persistSavedCardForUser,
+  tapPayPayByToken,
+} from "@/lib/tappay/cards";
 import { getPublicAppUrl, isLivePayment } from "@/lib/tappay/env";
 import { maybeConfirmSupabaseMatch } from "@/lib/supabase/matches";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
@@ -74,11 +80,73 @@ async function issueInvoiceForPayment(row: Record<string, unknown>) {
   }
 }
 
+async function maybeSaveCardAfterPayment(
+  pay: Record<string, unknown>,
+  tapPayRaw?: Record<string, unknown> | null,
+) {
+  if (!pay.save_card_requested) return;
+
+  const fromRaw = tapPayRaw ? extractCardSecret(tapPayRaw) : null;
+  const cardKey =
+    fromRaw?.cardKey || (pay.pending_card_key ? String(pay.pending_card_key) : null);
+  const cardToken =
+    fromRaw?.cardToken || (pay.pending_card_token ? String(pay.pending_card_token) : null);
+
+  if (!cardKey || !cardToken) {
+    logAppError("payment.save_card_missing_secret", {
+      paymentId: pay.id,
+      orderNumber: pay.order_number,
+    });
+    return;
+  }
+
+  try {
+    await persistSavedCardForUser({
+      userId: String(pay.user_id),
+      replaceExisting: Boolean(pay.save_card_replace),
+      cardKey,
+      cardToken,
+      lastFour:
+        fromRaw?.lastFour ||
+        (pay.pending_card_last_four ? String(pay.pending_card_last_four) : null),
+      brand:
+        fromRaw?.brand || (pay.pending_card_brand ? String(pay.pending_card_brand) : null),
+      expiryMonth:
+        fromRaw?.expiryMonth ||
+        (pay.pending_card_expiry_month ? String(pay.pending_card_expiry_month) : null),
+      expiryYear:
+        fromRaw?.expiryYear ||
+        (pay.pending_card_expiry_year ? String(pay.pending_card_expiry_year) : null),
+    });
+    logApp("payment.save_card_ok", { paymentId: pay.id, userId: pay.user_id });
+  } catch (e) {
+    logAppError("payment.save_card_failed", {
+      paymentId: pay.id,
+      message: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  const supabase = client();
+  await supabase
+    .from("payments")
+    .update({
+      save_card_requested: false,
+      pending_card_key: null,
+      pending_card_token: null,
+      pending_card_last_four: null,
+      pending_card_brand: null,
+      pending_card_expiry_month: null,
+      pending_card_expiry_year: null,
+    })
+    .eq("id", pay.id);
+}
+
 export async function markPaymentPaidAndFulfill(input: {
   paymentId: string;
   transactionId: string;
   bankTransactionId?: string | null;
   provider?: string;
+  tapPayRaw?: Record<string, unknown> | null;
 }) {
   const supabase = client();
   const { data: pay, error } = await supabase
@@ -90,6 +158,9 @@ export async function markPaymentPaidAndFulfill(input: {
   if (!pay) throw new Error("找不到付款單。");
 
   if (pay.status === "PAID" || pay.status === "NOT_REQUIRED") {
+    if (pay.save_card_requested) {
+      await maybeSaveCardAfterPayment(pay as Record<string, unknown>, input.tapPayRaw);
+    }
     return { matchId: String(pay.match_id), alreadyPaid: true as const };
   }
   if (pay.status !== "PENDING") throw new Error("此付款單無法支付。");
@@ -126,6 +197,15 @@ export async function markPaymentPaidAndFulfill(input: {
     });
   }
 
+  try {
+    await maybeSaveCardAfterPayment(updated as Record<string, unknown>, input.tapPayRaw);
+  } catch (e) {
+    logAppError("payment.save_card_exception", {
+      paymentId: input.paymentId,
+      message: e instanceof Error ? e.message : String(e),
+    });
+  }
+
   logApp("payment.tappay_settled", {
     paymentId: input.paymentId,
     matchId: updated.match_id,
@@ -146,6 +226,8 @@ export async function chargeTapPayPayment(input: {
   carrier?: string | null;
   buyerIdentifier?: string | null;
   buyerName?: string | null;
+  saveCard?: boolean;
+  replaceExistingCard?: boolean;
 }) {
   if (!isLivePayment()) {
     throw new Error("目前為 MOCK 模式，請使用模擬付款。");
@@ -168,6 +250,14 @@ export async function chargeTapPayPayment(input: {
   }
   if (method === "saved_card" && !input.cardId) {
     throw new Error("缺少 cardId");
+  }
+
+  const wantSaveCard = method === "card" && Boolean(input.saveCard);
+  if (wantSaveCard) {
+    const existing = await getPublicSavedCard(input.userId);
+    if (existing && !input.replaceExistingCard) {
+      throw new Error("你已有存卡，若要儲存請確認覆蓋。");
+    }
   }
 
   const supabase = client();
@@ -223,6 +313,8 @@ export async function chargeTapPayPayment(input: {
       buyer_identifier: input.buyerIdentifier?.trim() || null,
       buyer_name: input.buyerName?.trim() || null,
       invoice_status: pay.invoice_status || "PENDING",
+      save_card_requested: wantSaveCard,
+      save_card_replace: wantSaveCard && Boolean(input.replaceExistingCard),
     })
     .eq("id", pay.id)
     .eq("status", "PENDING");
@@ -260,11 +352,34 @@ export async function chargeTapPayPayment(input: {
       frontendRedirectUrl,
       backendNotifyUrl,
       threeDomainSecure: method === "card",
+      remember: wantSaveCard,
     });
   }
 
   if (result.status !== 0) {
     throw new Error(result.msg || "TapPay 付款失敗");
+  }
+
+  if (wantSaveCard) {
+    const card = extractCardSecret(result.raw);
+    if (card.cardKey && card.cardToken) {
+      await supabase
+        .from("payments")
+        .update({
+          pending_card_key: card.cardKey,
+          pending_card_token: card.cardToken,
+          pending_card_last_four: card.lastFour,
+          pending_card_brand: card.brand,
+          pending_card_expiry_month: card.expiryMonth,
+          pending_card_expiry_year: card.expiryYear,
+        })
+        .eq("id", pay.id);
+    } else {
+      logAppError("payment.save_card_no_secret_yet", {
+        paymentId: pay.id,
+        hasPaymentUrl: Boolean(result.payment_url),
+      });
+    }
   }
 
   if (result.payment_url) {
@@ -291,6 +406,7 @@ export async function chargeTapPayPayment(input: {
     transactionId: result.rec_trade_id || `tappay_${randomUUID().slice(0, 8)}`,
     bankTransactionId: result.bank_transaction_id,
     provider,
+    tapPayRaw: result.raw,
   });
 
   return { ok: true as const, matchId: settled.matchId, orderNumber, method };
@@ -302,6 +418,8 @@ export async function settleTapPayNotify(body: {
   rec_trade_id?: string;
   bank_transaction_id?: string;
   msg?: string;
+  card_secret?: Record<string, unknown>;
+  card_info?: Record<string, unknown>;
 }) {
   if (Number(body.status) !== 0) {
     logApp("payment.tappay_notify_ignored", {
@@ -346,6 +464,7 @@ export async function settleTapPayNotify(body: {
     paymentId: String(pay.id),
     transactionId: body.rec_trade_id || String(pay.transaction_id || `tappay_${pay.id}`),
     bankTransactionId: body.bank_transaction_id,
+    tapPayRaw: body as unknown as Record<string, unknown>,
   });
 
   return { ok: true, matchId: String(pay.match_id) };

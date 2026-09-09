@@ -101,7 +101,7 @@ async function upsertUserCard(input: {
   if (error) throw new Error(error.message);
 }
 
-function extractCardSecret(raw: Record<string, unknown>) {
+export function extractCardSecret(raw: Record<string, unknown>) {
   const secret = (raw.card_secret || {}) as Record<string, unknown>;
   const info = (raw.card_info || {}) as Record<string, unknown>;
   const expiry = parseExpiry(info.expiry_date);
@@ -113,6 +113,35 @@ function extractCardSecret(raw: Record<string, unknown>) {
     expiryMonth: expiry.month,
     expiryYear: expiry.year,
   };
+}
+
+/** 付款成功後把 TapPay card_secret 寫入一人一卡。 */
+export async function persistSavedCardForUser(input: {
+  userId: string;
+  replaceExisting?: boolean;
+  cardKey: string;
+  cardToken: string;
+  lastFour?: string | null;
+  brand?: string | null;
+  expiryMonth?: string | null;
+  expiryYear?: string | null;
+}) {
+  const existing = await getPublicSavedCard(input.userId);
+  if (existing && !input.replaceExisting) {
+    throw new Error("你已有一張存卡，請先刪除或選擇覆蓋。");
+  }
+  if (existing && input.replaceExisting) {
+    await removeSavedCard(input.userId);
+  }
+  await upsertUserCard({
+    userId: input.userId,
+    cardKey: input.cardKey,
+    cardToken: input.cardToken,
+    lastFour: input.lastFour,
+    brand: input.brand,
+    expiryMonth: input.expiryMonth,
+    expiryYear: input.expiryYear,
+  });
 }
 
 export async function bindTapPayCard(input: {

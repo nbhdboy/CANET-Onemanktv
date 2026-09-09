@@ -33,6 +33,7 @@ export async function tapPayPayByPrime(input: {
   backendNotifyUrl: string;
   method?: "card" | "linepay";
   threeDomainSecure?: boolean;
+  remember?: boolean;
 }): Promise<TapPayChargeResult> {
   const cfg = getTapPayServerConfig();
   const isLinePay = input.method === "linepay" || input.prime.startsWith("ln_");
@@ -64,6 +65,7 @@ export async function tapPayPayByPrime(input: {
   if (!isLinePay) {
     body.bank_transaction_id = generateBankTransactionId();
     body.three_domain_secure = input.threeDomainSecure !== false;
+    if (input.remember) body.remember = true;
   }
 
   const resp = await fetch(cfg.payByPrimeUrl, {
