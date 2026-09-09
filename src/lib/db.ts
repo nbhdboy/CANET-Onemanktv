@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   profile_completed INTEGER NOT NULL DEFAULT 0,
   successful_match_count INTEGER NOT NULL DEFAULT 0,
   free_match_used INTEGER NOT NULL DEFAULT 0,
+  points INTEGER NOT NULL DEFAULT 0,
   rating_avg REAL,
   rating_count INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'ACTIVE',
@@ -140,6 +141,20 @@ CREATE TABLE IF NOT EXISTS payments (
   transaction_id TEXT,
   status TEXT NOT NULL,
   paid_at TEXT,
+  created_at TEXT NOT NULL,
+  credit_applied INTEGER NOT NULL DEFAULT 0,
+  credited_at TEXT
+);
+
+CREATE TABLE IF NOT EXISTS credit_ledger (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  delta INTEGER NOT NULL,
+  balance_after INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  message TEXT,
+  source_match_id TEXT REFERENCES matches(id),
+  source_payment_id TEXT REFERENCES payments(id),
   created_at TEXT NOT NULL
 );
 
@@ -294,9 +309,43 @@ function seed(db: Database.Database) {
   seedVenues(db);
 }
 
+function ensureSchemaPatches(db: Database.Database) {
+  const cols = (table: string) =>
+    (db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>).map((c) => c.name);
+  const profileCols = cols("profiles");
+  if (!profileCols.includes("points")) {
+    db.exec(`ALTER TABLE profiles ADD COLUMN points INTEGER NOT NULL DEFAULT 0`);
+  }
+  const payCols = cols("payments");
+  if (!payCols.includes("credit_applied")) {
+    db.exec(`ALTER TABLE payments ADD COLUMN credit_applied INTEGER NOT NULL DEFAULT 0`);
+  }
+  const payCols2 = cols("payments");
+  if (!payCols2.includes("credited_at")) {
+    db.exec(`ALTER TABLE payments ADD COLUMN credited_at TEXT`);
+  }
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS credit_ledger (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      delta INTEGER NOT NULL,
+      balance_after INTEGER NOT NULL,
+      reason TEXT NOT NULL,
+      message TEXT,
+      source_match_id TEXT REFERENCES matches(id),
+      source_payment_id TEXT REFERENCES payments(id),
+      created_at TEXT NOT NULL
+    )
+  `);
+  db.prepare(
+    `UPDATE platform_config SET value = ?, updated_at = ? WHERE key = 'payment_timeout_minutes'`,
+  ).run(DEFAULT_CONFIG.payment_timeout_minutes, nowIso());
+}
+
 export function getDb(): Database.Database {
   if (globalForDb.kplus1Db) {
     seedVenues(globalForDb.kplus1Db);
+    ensureSchemaPatches(globalForDb.kplus1Db);
     return globalForDb.kplus1Db;
   }
   const db = new Database(dbPath());
@@ -304,6 +353,7 @@ export function getDb(): Database.Database {
   db.pragma("foreign_keys = ON");
   db.exec(SCHEMA);
   seed(db);
+  ensureSchemaPatches(db);
   globalForDb.kplus1Db = db;
   return db;
 }

@@ -135,7 +135,7 @@ export function rememberHeroAge(age: HeroAge | number) {
 export const DEFAULT_CONFIG = {
   service_fee_twd: "50",
   free_match_count: "1",
-  payment_timeout_minutes: "15",
+  payment_timeout_minutes: "30",
   payment_mode: "MOCK",
   no_show_review_threshold: "3",
 } as const;

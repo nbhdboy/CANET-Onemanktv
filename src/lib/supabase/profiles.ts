@@ -27,6 +27,7 @@ function mapProfile(row: Record<string, unknown>): Profile {
     profile_completed: flag(row.profile_completed),
     successful_match_count: Number(row.successful_match_count ?? 0),
     free_match_used: flag(row.free_match_used),
+    points: Number(row.points ?? 0),
     rating_avg: row.rating_avg == null ? null : Number(row.rating_avg),
     rating_count: Number(row.rating_count ?? 0),
     status: (row.status as UserStatus) || "ACTIVE",

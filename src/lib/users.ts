@@ -7,9 +7,11 @@ import type { PrivateContacts, Profile, UserStatus } from "./types";
 import { useSupabaseApp } from "./runtime";
 
 export function getProfile(id: string): Profile | undefined {
-  return getDb()
+  const row = getDb()
     .prepare(`SELECT * FROM profiles WHERE id = ?`)
     .get(id) as Profile | undefined;
+  if (!row) return undefined;
+  return { ...row, points: Number((row as Profile).points ?? 0) };
 }
 
 export function getUserByEmail(email: string) {

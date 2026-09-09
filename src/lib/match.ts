@@ -34,27 +34,83 @@ export function runMaintenance() {
     .all(now) as MatchRecord[];
 
   const expireOne = db.transaction((match: MatchRecord) => {
+    const req = db
+      .prepare(`SELECT sing_at, status FROM sing_requests WHERE id = ?`)
+      .get(match.request_id) as { sing_at: string; status: string } | undefined;
+    const canReopen =
+      Boolean(req) &&
+      req!.status === "MATCH_PENDING" &&
+      !isPast(req!.sing_at);
+
     db.prepare(
       `UPDATE matches SET status = 'EXPIRED_PAYMENT' WHERE id = ? AND status = 'PENDING_PAYMENT'`,
     ).run(match.id);
-    db.prepare(
-      `UPDATE sing_requests SET status = 'OPEN', updated_at = ? WHERE id = ? AND status = 'MATCH_PENDING'`,
-    ).run(now, match.request_id);
+
+    if (canReopen) {
+      db.prepare(
+        `UPDATE sing_requests SET status = 'OPEN', updated_at = ? WHERE id = ? AND status = 'MATCH_PENDING'`,
+      ).run(now, match.request_id);
+    } else if (req?.status === "MATCH_PENDING") {
+      db.prepare(
+        `UPDATE sing_requests SET status = 'EXPIRED', updated_at = ? WHERE id = ? AND status = 'MATCH_PENDING'`,
+      ).run(now, match.request_id);
+    }
+
     db.prepare(
       `UPDATE match_applications SET status = 'EXPIRED_PAYMENT', updated_at = ?
        WHERE request_id = ? AND applicant_id = ? AND status = 'ACCEPTED'`,
     ).run(now, match.request_id, match.participant_id);
+
+    const pays = db
+      .prepare(`SELECT * FROM payments WHERE match_id = ?`)
+      .all(match.id) as PaymentRecord[];
+
     db.prepare(
       `UPDATE payments SET status = 'FAILED' WHERE match_id = ? AND status = 'PENDING'`,
     ).run(match.id);
-    notify(match.initiator_id, "payment_timeout", {
-      matchId: match.id,
-      message: "這次媒合付款時間已結束。",
-    });
-    notify(match.participant_id, "payment_timeout", {
-      matchId: match.id,
-      message: "這次媒合付款時間已結束。",
-    });
+
+    for (const pay of pays) {
+      if (pay.status !== "PAID" || !(pay.fee_due > 0)) continue;
+      const already = db
+        .prepare(`SELECT credited_at FROM payments WHERE id = ?`)
+        .get(pay.id) as { credited_at: string | null };
+      if (already?.credited_at) continue;
+      const profile = db
+        .prepare(`SELECT points FROM profiles WHERE id = ?`)
+        .get(pay.user_id) as { points: number } | undefined;
+      const current = Number(profile?.points ?? 0);
+      const next = current + pay.fee_due;
+      const message =
+        "因為配對對方逾時未付款，已將你支付的金額轉換為點數。下次接受或配對時可全額使用點數支付，無需再刷卡。";
+      db.prepare(`UPDATE profiles SET points = ?, updated_at = ? WHERE id = ?`).run(
+        next,
+        now,
+        pay.user_id,
+      );
+      db.prepare(
+        `INSERT INTO credit_ledger (
+          id, user_id, delta, balance_after, reason, message,
+          source_match_id, source_payment_id, created_at
+        ) VALUES (?, ?, ?, ?, 'MATCH_TIMEOUT_CREDIT', ?, ?, ?, ?)`,
+      ).run(nid(), pay.user_id, pay.fee_due, next, message, match.id, pay.id, now);
+      db.prepare(`UPDATE payments SET credited_at = ? WHERE id = ?`).run(now, pay.id);
+    }
+
+    const timeoutMessage = canReopen
+      ? "這次媒合付款時間已結束，歌局已重新開放在找歌友。"
+      : "這次媒合付款時間已結束，且唱歌時間已過，這場不會再出現在找歌友。";
+    const creditHint =
+      "若你已付款，金額已轉成點數，下次可用點數全額支付服務費。";
+
+    for (const uid of [match.initiator_id, match.participant_id]) {
+      const paid = pays.find((p) => p.user_id === uid && p.status === "PAID" && p.fee_due > 0);
+      notify(uid, "payment_timeout", {
+        matchId: match.id,
+        requestId: match.request_id,
+        reopened: canReopen,
+        message: paid ? `${timeoutMessage}${creditHint}` : timeoutMessage,
+      });
+    }
   });
 
   for (const m of timedOut) expireOne(m);
@@ -696,6 +752,92 @@ export function settleMockPayment(userId: string, paymentId: string) {
   track("payment_success", userId, { paymentId, matchId: pay.match_id, amount: pay.fee_due });
   maybeConfirmMatch(pay.match_id);
   return pay.match_id;
+}
+
+export function settlePointsPayment(userId: string, paymentId: string) {
+  runMaintenance();
+  const db = getDb();
+  const pay = db
+    .prepare(`SELECT * FROM payments WHERE id = ?`)
+    .get(paymentId) as PaymentRecord | undefined;
+  if (!pay || pay.user_id !== userId) throw new Error("找不到付款單。");
+  if (pay.status === "PAID" || pay.status === "NOT_REQUIRED") return pay.match_id;
+  if (pay.status !== "PENDING") throw new Error("此付款單無法支付。");
+  if (!(pay.fee_due > 0)) throw new Error("此筆無需付款。");
+
+  const match = db
+    .prepare(`SELECT * FROM matches WHERE id = ?`)
+    .get(pay.match_id) as MatchRecord | undefined;
+  if (!match || match.status !== "PENDING_PAYMENT") throw new Error("媒合已結束。");
+  if (match.payment_deadline && isPast(match.payment_deadline)) {
+    throw new Error("這次媒合付款時間已結束，名額已重新開放。");
+  }
+
+  const profile = db
+    .prepare(`SELECT points FROM profiles WHERE id = ?`)
+    .get(userId) as { points: number } | undefined;
+  const current = Number(profile?.points ?? 0);
+  if (current < pay.fee_due) throw new Error("點數不足，請改用其他付款方式。");
+
+  const now = nowIso();
+  const next = current - pay.fee_due;
+  const tx = db.transaction(() => {
+    const updated = db
+      .prepare(
+        `UPDATE payments
+         SET status = 'PAID', provider = 'POINTS', credit_applied = ?, transaction_id = ?, paid_at = ?
+         WHERE id = ? AND status = 'PENDING' AND user_id = ?`,
+      )
+      .run(pay.fee_due, `pts_${nid().slice(0, 8)}`, now, paymentId, userId);
+    if (updated.changes !== 1) throw new Error("付款狀態無法更新。");
+    db.prepare(`UPDATE profiles SET points = ?, updated_at = ? WHERE id = ?`).run(
+      next,
+      now,
+      userId,
+    );
+    db.prepare(
+      `INSERT INTO credit_ledger (
+        id, user_id, delta, balance_after, reason, message,
+        source_match_id, source_payment_id, created_at
+      ) VALUES (?, ?, ?, ?, 'REDEEM', ?, ?, ?, ?)`,
+    ).run(
+      nid(),
+      userId,
+      -pay.fee_due,
+      next,
+      `使用 ${pay.fee_due} 點支付媒合服務費。`,
+      pay.match_id,
+      paymentId,
+      now,
+    );
+  });
+  tx();
+  track("payment_success", userId, {
+    paymentId,
+    matchId: pay.match_id,
+    amount: pay.fee_due,
+    method: "POINTS",
+  });
+  maybeConfirmMatch(pay.match_id);
+  return pay.match_id;
+}
+
+export function listCreditLedger(userId: string, limit = 20) {
+  return getDb()
+    .prepare(
+      `SELECT * FROM credit_ledger WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`,
+    )
+    .all(userId, limit) as Array<{
+    id: string;
+    user_id: string;
+    delta: number;
+    balance_after: number;
+    reason: string;
+    message: string | null;
+    source_match_id: string | null;
+    source_payment_id: string | null;
+    created_at: string;
+  }>;
 }
 
 export function getMatchForUser(userId: string, matchId: string) {

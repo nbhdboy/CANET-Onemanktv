@@ -16,6 +16,7 @@ import {
   loadUnlockedContactsApp,
   rejectApplicationApp,
   settleMockPaymentApp,
+  settlePointsPaymentApp,
 } from "@/lib/app-data";
 import { getSession } from "@/lib/session";
 import { submitReview } from "@/lib/reviews";
@@ -165,6 +166,21 @@ export async function mockPayAction(paymentId: string): Promise<ActionResult> {
   } catch (e) {
     rethrowIfRedirect(e);
     track("payment_failed", undefined, {});
+    return fail(e);
+  }
+}
+
+export async function pointsPayAction(paymentId: string): Promise<ActionResult> {
+  try {
+    const session = await requireSession();
+    track("payment_started", session.id, { paymentId, method: "POINTS" });
+    const matchId = await settlePointsPaymentApp(session.id, paymentId);
+    revalidatePath("/profile");
+    revalidatePath(`/matches/${matchId}`);
+    redirect(`/matches/${matchId}/success`);
+  } catch (e) {
+    rethrowIfRedirect(e);
+    track("payment_failed", undefined, { method: "POINTS" });
     return fail(e);
   }
 }

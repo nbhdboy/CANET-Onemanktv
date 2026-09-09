@@ -14,11 +14,12 @@ import { UnlockedContacts } from "@/components/match/UnlockedContacts";
 import { BookingPanel } from "@/components/match/BookingPanel";
 import { ReviewForm } from "@/components/match/ReviewForm";
 import { SafetyActions } from "@/components/safety/SafetyActions";
+import { PaymentDeadlineCountdown } from "@/components/match/PaymentDeadlineCountdown";
 import { canReview } from "@/lib/reviews";
 import { useSupabaseApp } from "@/lib/runtime";
 import { getTapPayPublicConfig, isLivePayment } from "@/lib/tappay/env";
 import { getPublicSavedCard } from "@/lib/tappay/cards";
-import { countdownLabel, formatDateTime } from "@/lib/time";
+import { formatDateTime } from "@/lib/time";
 import { durationLabel } from "@/lib/format";
 import Link from "next/link";
 
@@ -30,6 +31,16 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
   const session = await getSession();
   if (!session) redirect("/login");
   const { id } = await params;
+
+  if (useSupabaseApp()) {
+    try {
+      const { runSupabaseMaintenance } = await import("@/lib/supabase/maintenance");
+      await runSupabaseMaintenance();
+    } catch {
+      /* ignore */
+    }
+  }
+
   const match = await loadMatchForUserApp(session.id, id);
   if (!match) notFound();
   const request = await loadRequestCard(match.request_id, session.id);
@@ -37,6 +48,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
   const counterpartId =
     match.initiator_id === session.id ? match.participant_id : match.initiator_id;
   const counterpart = await loadProfile(counterpartId);
+  const myProfile = await loadProfile(session.id);
   const myPay = await loadMyPaymentApp(match.id, session.id);
   const allPay = await loadPaymentsApp(match.id);
   const brand = await loadBrandForRequestApp(match.request_id);
@@ -44,6 +56,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
   const reviewGate = cloud
     ? ({ ok: false as const, reason: "NOT_READY" as const })
     : canReview(session.id, match.id);
+  const points = Number(myProfile?.points ?? 0);
 
   if (match.status === "PENDING_PAYMENT" && myPay?.status === "PENDING") {
     const live = isLivePayment();
@@ -55,18 +68,20 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
           <TapPayCheckout
             paymentId={myPay.id}
             amount={myPay.fee_due}
-            deadlineLabel={match.payment_deadline ? countdownLabel(match.payment_deadline) : "--"}
+            deadlineIso={match.payment_deadline}
             defaultEmail={session.email}
             appId={tappay.appId}
             appKey={tappay.appKey}
             tappayEnv={tappay.env}
             savedCard={savedCard}
+            points={points}
           />
         ) : (
           <MockCheckout
             paymentId={myPay.id}
             amount={myPay.fee_due}
-            deadlineLabel={match.payment_deadline ? countdownLabel(match.payment_deadline) : "--"}
+            deadlineIso={match.payment_deadline}
+            points={points}
           />
         )}
         <p className="text-sm text-[var(--muted)]">
@@ -85,7 +100,11 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
       <main className="mx-auto max-w-lg px-4 py-10 space-y-4">
         <h1 className="text-2xl font-bold">等待對方完成付款</h1>
         <p className="text-[var(--muted)]">你這次無需支付平台服務費。對方完成後就會正式媒合。</p>
-        <p className="text-sm">倒數 {match.payment_deadline ? countdownLabel(match.payment_deadline) : ""}</p>
+        <PaymentDeadlineCountdown
+          deadlineIso={match.payment_deadline}
+          prefix="倒數"
+          suffix=""
+        />
       </main>
     );
   }
@@ -95,7 +114,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
       <main className="mx-auto max-w-lg px-4 py-10 space-y-4">
         <h1 className="text-2xl font-bold">這次媒合沒有成立</h1>
         <p>這次媒合付款時間已結束，名額已重新開放。</p>
-        <p className="text-sm text-[var(--muted)]">第一次免費額度沒有被消耗。</p>
+        <p className="text-sm text-[var(--muted)]">第一次免費額度沒有被消耗。若你已付款，金額已轉成點數。</p>
         <Link href="/" className="text-purple-700 font-semibold">
           看看其他歌局
         </Link>

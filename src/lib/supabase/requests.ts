@@ -236,7 +236,17 @@ export async function fetchSupabaseRequestCard(id: string): Promise<RequestCardD
   return mapCard(data as Record<string, unknown>);
 }
 
-export async function listSupabaseFeed(filters: FeedFilters): Promise<RequestCardData[]> {
+export async function listSupabaseFeed(
+  filters: FeedFilters,
+  viewerId?: string | null,
+): Promise<RequestCardData[]> {
+  try {
+    const { runSupabaseMaintenance } = await import("@/lib/supabase/maintenance");
+    await runSupabaseMaintenance();
+  } catch {
+    /* keep feed available even if maintenance fails */
+  }
+
   const client = await readClient();
   if (!client) return [];
   let query = client
@@ -252,10 +262,18 @@ export async function listSupabaseFeed(filters: FeedFilters): Promise<RequestCar
   const { data, error } = await query;
   if (error || !data) return [];
 
+  const blocked = viewerId
+    ? await import("@/lib/supabase/blocks").then((m) =>
+        m.listSupabaseBlockedCounterpartIds(viewerId),
+      )
+    : [];
+  const blockedSet = new Set(blocked);
+
   return data
     .map((row) => mapCard(row as Record<string, unknown>))
     .filter((item): item is RequestCardData => {
       if (!item) return false;
+      if (blockedSet.has(item.initiator.id)) return false;
       if (filters.city && item.city !== filters.city) return false;
       if (filters.brand && item.brand_id !== filters.brand) return false;
       if (filters.age && item.age_band !== filters.age) return false;
@@ -289,6 +307,11 @@ export async function applySupabaseRequest(userId: string, requestId: string) {
   if (req.status === "MATCH_PENDING") throw new Error("LOCKED");
   if (req.status !== "OPEN") throw new Error("NOT_OPEN");
   if (isPast(String(req.sing_at))) throw new Error("EXPIRED");
+
+  const { isSupabaseBlockedEither } = await import("@/lib/supabase/blocks");
+  if (await isSupabaseBlockedEither(userId, String(req.initiator_id))) {
+    throw new Error("BLOCKED");
+  }
 
   const { data: existing, error: existingError } = await client
     .from("match_applications")

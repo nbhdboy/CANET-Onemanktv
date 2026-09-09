@@ -244,6 +244,11 @@ export async function acceptSupabaseApplication(userId: string, applicationId: s
   if (req.initiator_id !== userId) throw new Error("沒有權限。");
   if (req.status !== "OPEN") throw new Error("LOCKED");
 
+  const { isSupabaseBlockedEither } = await import("@/lib/supabase/blocks");
+  if (await isSupabaseBlockedEither(userId, String(app.applicant_id))) {
+    throw new Error("BLOCKED");
+  }
+
   const initiator = await fetchSupabaseProfile(req.initiator_id);
   const applicant = await fetchSupabaseProfile(app.applicant_id);
   if (!initiator || !applicant) throw new Error("找不到使用者資料。");
@@ -518,6 +523,8 @@ export async function getSupabasePayments(matchId: string): Promise<PaymentRecor
     status: p.status as PaymentRecord["status"],
     paid_at: p.paid_at ? String(p.paid_at) : null,
     created_at: String(p.created_at),
+    credit_applied: Number(p.credit_applied ?? 0),
+    credited_at: p.credited_at ? String(p.credited_at) : null,
   }));
 }
 

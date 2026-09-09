@@ -4,27 +4,31 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatTwd } from "@/lib/format";
 import type { SavedCardView } from "@/components/settings/SavedCardSettings";
+import { PaymentDeadlineCountdown } from "@/components/match/PaymentDeadlineCountdown";
+import { PointsPayButton } from "@/components/match/PointsPayButton";
 
 type PayMethod = "saved_card" | "card" | "linepay";
 
 export function TapPayCheckout({
   paymentId,
   amount,
-  deadlineLabel,
+  deadlineIso,
   defaultEmail,
   appId,
   appKey,
   tappayEnv,
   savedCard,
+  points = 0,
 }: {
   paymentId: string;
   amount: number;
-  deadlineLabel: string;
+  deadlineIso?: string | null;
   defaultEmail: string;
   appId: string;
   appKey: string;
   tappayEnv: string;
   savedCard: SavedCardView | null;
+  points?: number;
 }) {
   const router = useRouter();
   const [method, setMethod] = useState<PayMethod>(savedCard ? "saved_card" : "card");
@@ -240,14 +244,15 @@ export function TapPayCheckout({
 
   return (
     <div className="rounded-3xl bg-white card-float p-6 space-y-4">
-      <p className="text-sm text-[var(--muted)]">請在 {deadlineLabel} 內完成媒合</p>
+      <PaymentDeadlineCountdown deadlineIso={deadlineIso} />
       <h2 className="text-2xl font-bold">🎤 媒合即將成立</h2>
       <p>
         本次平台媒合服務費 {formatTwd(amount)}
         <span className="block text-sm text-[var(--muted)]">
-          完成後即可解鎖彼此聯絡方式，並開立應稅電子發票。
+          完成後即可解鎖彼此聯絡方式。使用信用卡／LINE Pay 會開立應稅電子發票；全額點數支付則不開發票。
         </span>
       </p>
+      <PointsPayButton paymentId={paymentId} amount={amount} points={points} />
 
       <div className={`grid gap-2 ${card ? "grid-cols-3" : "grid-cols-2"}`}>
         {card ? (

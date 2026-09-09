@@ -55,6 +55,7 @@ export interface Profile {
   profile_completed: number;
   successful_match_count: number;
   free_match_used: number;
+  points: number;
   rating_avg: number | null;
   rating_count: number;
   status: UserStatus;
@@ -168,6 +169,20 @@ export interface PaymentRecord {
   transaction_id: string | null;
   status: PaymentStatus;
   paid_at: string | null;
+  created_at: string;
+  credit_applied?: number;
+  credited_at?: string | null;
+}
+
+export interface CreditLedgerEntry {
+  id: string;
+  user_id: string;
+  delta: number;
+  balance_after: number;
+  reason: string;
+  message: string | null;
+  source_match_id: string | null;
+  source_payment_id: string | null;
   created_at: string;
 }
 

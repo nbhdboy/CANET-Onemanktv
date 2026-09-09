@@ -208,6 +208,24 @@ export async function settleMockPaymentApp(userId: string, paymentId: string) {
   return settleMockPayment(userId, paymentId);
 }
 
+export async function settlePointsPaymentApp(userId: string, paymentId: string) {
+  if (useSupabaseApp()) {
+    const { redeemPointsForPayment } = await import("@/lib/supabase/credits");
+    return redeemPointsForPayment(userId, paymentId);
+  }
+  const { settlePointsPayment } = await import("@/lib/match");
+  return settlePointsPayment(userId, paymentId);
+}
+
+export async function loadCreditLedgerApp(userId: string) {
+  if (useSupabaseApp()) {
+    const { listSupabaseCreditLedger } = await import("@/lib/supabase/credits");
+    return listSupabaseCreditLedger(userId);
+  }
+  const { listCreditLedger } = await import("@/lib/match");
+  return listCreditLedger(userId);
+}
+
 export async function loadUnlockedContactsApp(viewerId: string, matchId: string) {
   if (useSupabaseApp()) return getSupabaseUnlockedContacts(viewerId, matchId);
   const { getUnlockedCounterpartContacts } = await import("@/lib/contacts");
@@ -226,6 +244,6 @@ export async function loadRequestCard(id: string, viewerId?: string | null) {
 }
 
 export async function listFeedApp(filters: FeedFilters, viewerId?: string | null) {
-  if (useSupabaseApp()) return listSupabaseFeed(filters);
+  if (useSupabaseApp()) return listSupabaseFeed(filters, viewerId);
   return listFeed(filters, viewerId);
 }
