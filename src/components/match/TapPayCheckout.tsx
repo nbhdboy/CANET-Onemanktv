@@ -359,10 +359,10 @@ export function TapPayCheckout({
           </div>
           {!ready && <p className="text-xs text-[var(--muted)]">正在載入付款元件…</p>}
 
-          <label className="mt-2 flex items-start gap-2 text-sm">
+          <label className="mt-2 flex items-center gap-2 text-sm leading-snug">
             <input
               type="checkbox"
-              className="mt-1"
+              className="size-4 shrink-0 accent-purple-600"
               checked={saveCard}
               onChange={(e) => {
                 const checked = e.target.checked;
@@ -378,9 +378,10 @@ export function TapPayCheckout({
               <p>
                 你已有存卡 {card.brand || "信用卡"} ······ {card.last_four}。要覆蓋成這張新卡嗎？
               </p>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 leading-snug">
                 <input
                   type="checkbox"
+                  className="size-4 shrink-0 accent-purple-600"
                   checked={replaceExistingCard}
                   onChange={(e) => setReplaceExistingCard(e.target.checked)}
                 />

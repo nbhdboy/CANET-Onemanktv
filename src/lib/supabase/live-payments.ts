@@ -318,7 +318,14 @@ export async function chargeTapPayPayment(input: {
     })
     .eq("id", pay.id)
     .eq("status", "PENDING");
-  if (prepError) throw new Error(prepError.message);
+  if (prepError) {
+    if (/save_card_|pending_card_|schema cache/i.test(prepError.message)) {
+      throw new Error(
+        "資料庫尚未更新存卡欄位，請先在 Supabase 執行 migration 00006_payment_save_card.sql。",
+      );
+    }
+    throw new Error(prepError.message);
+  }
 
   const cardholder = {
     name: input.cardholderName || "",
