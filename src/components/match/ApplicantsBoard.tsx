@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
 import { ApplicantActions } from "@/components/match/ApplicantActions";
+import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
 import { avatarPreset, durationLabel } from "@/lib/format";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
@@ -20,16 +24,29 @@ export function ApplicantsBoard({
   request: RequestCardData;
   applicants: ApplicantRow[];
 }) {
+  const [loading, setLoading] = useState(false);
   const pending = applicants.filter((a) => a.application.status === "PENDING");
   const decided = applicants.filter((a) => a.application.status !== "PENDING");
   const preset = avatarPreset(request.initiator.avatar_url);
   const canDecide = request.status === "OPEN";
+  const hero = heroByAge(ageBand);
+
+  if (loading) {
+    return (
+      <main className="relative min-h-screen text-white" style={{ backgroundColor: hero.bg }}>
+        <div className="grain pointer-events-none absolute inset-0 opacity-35" />
+        <div className="relative flex min-h-screen items-center justify-center px-4">
+          <EqualizerLoader tone="light" label="載入中" />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <StagePage
       ageBand={ageBand}
       watermark="申請"
-      kicker={`K歌 +1 · ${heroByAge(ageBand).label}歌局`}
+      kicker={`K歌 +1 · ${hero.label}歌局`}
       liveLabel="LIVE 申請"
       backHref="/matches"
       backLabel="回到媒合"
@@ -80,6 +97,7 @@ export function ApplicantsBoard({
               status={application.status}
               canDecide={canDecide}
               applicationId={application.id}
+              onLoadingChange={setLoading}
             />
           ))
         )}
@@ -94,6 +112,7 @@ export function ApplicantsBoard({
               status={application.status}
               canDecide={false}
               applicationId={application.id}
+              onLoadingChange={setLoading}
             />
           ))}
         </StageTrack>
@@ -107,11 +126,13 @@ function ApplicantCard({
   status,
   canDecide,
   applicationId,
+  onLoadingChange,
 }: {
   profile: PublicProfile;
   status: string;
   canDecide: boolean;
   applicationId: string;
+  onLoadingChange: (loading: boolean) => void;
 }) {
   const preset = avatarPreset(profile.avatar_url);
   const rating =
@@ -155,7 +176,10 @@ function ApplicantCard({
 
       {canDecide && status === "PENDING" ? (
         <div className="mt-5">
-          <ApplicantActions applicationId={applicationId} />
+          <ApplicantActions
+            applicationId={applicationId}
+            onLoadingChange={onLoadingChange}
+          />
         </div>
       ) : null}
     </article>
