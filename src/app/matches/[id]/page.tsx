@@ -17,6 +17,7 @@ import { SafetyActions } from "@/components/safety/SafetyActions";
 import { canReview } from "@/lib/reviews";
 import { useSupabaseApp } from "@/lib/runtime";
 import { getTapPayPublicConfig, isLivePayment } from "@/lib/tappay/env";
+import { getPublicSavedCard } from "@/lib/tappay/cards";
 import { countdownLabel, formatDateTime } from "@/lib/time";
 import { durationLabel } from "@/lib/format";
 import Link from "next/link";
@@ -47,6 +48,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
   if (match.status === "PENDING_PAYMENT" && myPay?.status === "PENDING") {
     const live = isLivePayment();
     const tappay = getTapPayPublicConfig();
+    const savedCard = live ? await getPublicSavedCard(session.id).catch(() => null) : null;
     return (
       <main className="mx-auto max-w-lg px-4 py-10 space-y-6">
         {live ? (
@@ -58,6 +60,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
             appId={tappay.appId}
             appKey={tappay.appKey}
             tappayEnv={tappay.env}
+            savedCard={savedCard}
           />
         ) : (
           <MockCheckout

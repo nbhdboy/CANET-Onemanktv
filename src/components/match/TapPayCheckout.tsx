@@ -3,26 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatTwd } from "@/lib/format";
+import type { SavedCardView } from "@/components/settings/SavedCardSettings";
 
-type PayMethod = "card" | "linepay";
-
-declare global {
-  interface Window {
-    TPDirect?: {
-      setupSDK: (appId: number, appKey: string, env: string) => void;
-      redirect?: (url: string) => void;
-      card: {
-        setup: (opts: Record<string, unknown>) => void;
-        onUpdate: (cb: (update: { canGetPrime: boolean; hasError: boolean }) => void) => void;
-        getTappayFieldsStatus: () => { canGetPrime: boolean };
-        getPrime: (cb: (result: { status: number; card?: { prime: string }; msg?: string }) => void) => void;
-      };
-      linePay?: {
-        getPrime: (cb: (result: { status: number; prime?: string; msg?: string }) => void) => void;
-      };
-    };
-  }
-}
+type PayMethod = "saved_card" | "card" | "linepay";
 
 export function TapPayCheckout({
   paymentId,
@@ -32,6 +15,7 @@ export function TapPayCheckout({
   appId,
   appKey,
   tappayEnv,
+  savedCard,
 }: {
   paymentId: string;
   amount: number;
@@ -40,9 +24,11 @@ export function TapPayCheckout({
   appId: string;
   appKey: string;
   tappayEnv: string;
+  savedCard: SavedCardView | null;
 }) {
   const router = useRouter();
-  const [method, setMethod] = useState<PayMethod>("card");
+  const [method, setMethod] = useState<PayMethod>(savedCard ? "saved_card" : "card");
+  const [card, setCard] = useState<SavedCardView | null>(savedCard);
   const [ready, setReady] = useState(false);
   const [canGetPrime, setCanGetPrime] = useState(false);
   const [pending, setPending] = useState(false);
@@ -51,6 +37,11 @@ export function TapPayCheckout({
   const [carrier, setCarrier] = useState("");
   const [buyerIdentifier, setBuyerIdentifier] = useState("");
   const [buyerName, setBuyerName] = useState("");
+
+  useEffect(() => {
+    setCard(savedCard);
+    if (savedCard) setMethod("saved_card");
+  }, [savedCard]);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,18 +106,17 @@ export function TapPayCheckout({
     });
   }, [ready, method]);
 
-  async function chargeWithPrime(prime: string, payMethod: PayMethod) {
+  async function charge(body: Record<string, unknown>) {
     const res = await fetch("/api/payments/tappay/charge", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         paymentId,
-        prime,
-        method: payMethod,
         buyerEmail: buyerEmail.trim(),
         carrier: carrier.trim() || undefined,
         buyerIdentifier: buyerIdentifier.trim() || undefined,
         buyerName: buyerName.trim() || undefined,
+        ...body,
       }),
     });
     const data = (await res.json()) as {
@@ -141,7 +131,7 @@ export function TapPayCheckout({
     }
 
     if (data.paymentUrl) {
-      if (payMethod === "linepay" && window.TPDirect?.redirect) {
+      if (body.method === "linepay" && window.TPDirect?.redirect) {
         window.TPDirect.redirect(data.paymentUrl);
       } else {
         window.location.href = data.paymentUrl;
@@ -158,12 +148,25 @@ export function TapPayCheckout({
     router.refresh();
   }
 
+  async function removeSaved() {
+    setPending(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/payments/tappay/remove-card", { method: "POST" });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) throw new Error(data.error || "刪卡失敗");
+      setCard(null);
+      setMethod("card");
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "刪卡失敗");
+    } finally {
+      setPending(false);
+    }
+  }
+
   async function pay() {
     setError(null);
-    if (!window.TPDirect) {
-      setError("TapPay 尚未就緒");
-      return;
-    }
     if (!buyerEmail.trim()) {
       setError("請填寫發票用 Email");
       return;
@@ -171,43 +174,54 @@ export function TapPayCheckout({
 
     setPending(true);
 
-    if (method === "linepay") {
-      if (!window.TPDirect.linePay) {
-        setError("LINE Pay SDK 尚未載入");
-        setPending(false);
+    try {
+      if (method === "saved_card") {
+        if (!card) throw new Error("尚未設定存卡");
+        await charge({ method: "saved_card", cardId: card.id });
         return;
       }
-      window.TPDirect.linePay.getPrime(async (result) => {
-        try {
-          if (result.status !== 0 || !result.prime) {
-            throw new Error(result.msg || "無法取得 LINE Pay 授權");
+
+      if (!window.TPDirect) throw new Error("TapPay 尚未就緒");
+
+      if (method === "linepay") {
+        if (!window.TPDirect.linePay) throw new Error("LINE Pay SDK 尚未載入");
+        window.TPDirect.linePay.getPrime(async (result) => {
+          try {
+            if (result.status !== 0 || !result.prime) {
+              throw new Error(result.msg || "無法取得 LINE Pay 授權");
+            }
+            await charge({ method: "linepay", prime: result.prime });
+          } catch (e) {
+            setError(e instanceof Error ? e.message : "付款失敗");
+            setPending(false);
           }
-          await chargeWithPrime(result.prime, "linepay");
+        });
+        return;
+      }
+
+      window.TPDirect.card.getPrime(async (primeResult) => {
+        try {
+          if (primeResult.status !== 0 || !primeResult.card?.prime) {
+            throw new Error(primeResult.msg || "無法取得卡片資訊");
+          }
+          await charge({ method: "card", prime: primeResult.card.prime });
         } catch (e) {
           setError(e instanceof Error ? e.message : "付款失敗");
           setPending(false);
         }
       });
-      return;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "付款失敗");
+      setPending(false);
     }
-
-    window.TPDirect.card.getPrime(async (primeResult) => {
-      try {
-        if (primeResult.status !== 0 || !primeResult.card?.prime) {
-          throw new Error(primeResult.msg || "無法取得卡片資訊");
-        }
-        await chargeWithPrime(primeResult.card.prime, "card");
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "付款失敗");
-        setPending(false);
-      }
-    });
   }
 
   const canSubmit =
     ready &&
     !pending &&
-    (method === "linepay" || canGetPrime);
+    (method === "linepay" ||
+      method === "saved_card" ||
+      (method === "card" && canGetPrime));
 
   return (
     <div className="rounded-3xl bg-white card-float p-6 space-y-4">
@@ -220,7 +234,20 @@ export function TapPayCheckout({
         </span>
       </p>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className={`grid gap-2 ${card ? "grid-cols-3" : "grid-cols-2"}`}>
+        {card ? (
+          <button
+            type="button"
+            onClick={() => setMethod("saved_card")}
+            className={`h-11 rounded-2xl border text-sm font-medium ${
+              method === "saved_card"
+                ? "border-purple-600 bg-purple-50 text-purple-800"
+                : "border-black/10"
+            }`}
+          >
+            已存卡
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => setMethod("card")}
@@ -234,7 +261,9 @@ export function TapPayCheckout({
           type="button"
           onClick={() => setMethod("linepay")}
           className={`h-11 rounded-2xl border text-sm font-medium ${
-            method === "linepay" ? "border-[#06C755] bg-[#06C755]/10 text-[#06C755]" : "border-black/10"
+            method === "linepay"
+              ? "border-[#06C755] bg-[#06C755]/10 text-[#06C755]"
+              : "border-black/10"
           }`}
         >
           LINE Pay
@@ -284,6 +313,27 @@ export function TapPayCheckout({
         </label>
       </div>
 
+      {method === "saved_card" && card ? (
+        <div className="rounded-2xl border p-3 space-y-2">
+          <p className="text-sm font-medium">
+            {card.brand || "信用卡"} ······ {card.last_four}
+          </p>
+          {(card.expiry_month || card.expiry_year) && (
+            <p className="text-xs text-[var(--muted)]">
+              到期 {card.expiry_month}/{card.expiry_year}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={removeSaved}
+            disabled={pending}
+            className="text-sm text-rose-600 underline disabled:opacity-50"
+          >
+            刪除這張存卡
+          </button>
+        </div>
+      ) : null}
+
       {method === "card" && (
         <div className="space-y-2 rounded-2xl border p-3">
           <p className="text-sm font-medium">信用卡</p>
@@ -314,7 +364,9 @@ export function TapPayCheckout({
           ? "處理中…"
           : method === "linepay"
             ? `用 LINE Pay 支付 ${formatTwd(amount)}`
-            : `支付 ${formatTwd(amount)}`}
+            : method === "saved_card"
+              ? `用存卡支付 ${formatTwd(amount)}`
+              : `支付 ${formatTwd(amount)}`}
       </button>
     </div>
   );

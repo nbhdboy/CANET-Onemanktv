@@ -3,6 +3,7 @@ import { logApp, logAppError } from "@/lib/log";
 import { isPast } from "@/lib/time";
 import { resolveCarrier } from "@/lib/tappay/carrier";
 import { tapPayIssueTaxableInvoice, tapPayPayByPrime } from "@/lib/tappay/client";
+import { getSavedCardSecrets, tapPayPayByToken } from "@/lib/tappay/cards";
 import { getPublicAppUrl, isLivePayment } from "@/lib/tappay/env";
 import { maybeConfirmSupabaseMatch } from "@/lib/supabase/matches";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
@@ -137,9 +138,10 @@ export async function markPaymentPaidAndFulfill(input: {
 export async function chargeTapPayPayment(input: {
   userId: string;
   paymentId: string;
-  prime: string;
+  prime?: string;
+  cardId?: string;
   buyerEmail: string;
-  method?: "card" | "linepay";
+  method?: "card" | "linepay" | "saved_card";
   cardholderName?: string;
   carrier?: string | null;
   buyerIdentifier?: string | null;
@@ -149,10 +151,23 @@ export async function chargeTapPayPayment(input: {
     throw new Error("目前為 MOCK 模式，請使用模擬付款。");
   }
 
-  const method = input.method === "linepay" || input.prime.startsWith("ln_") ? "linepay" : "card";
+  const method: "card" | "linepay" | "saved_card" =
+    input.method === "saved_card" || input.cardId
+      ? "saved_card"
+      : input.method === "linepay" || (input.prime || "").startsWith("ln_")
+        ? "linepay"
+        : "card";
+
   const email = input.buyerEmail.trim();
   if (!email || !email.includes("@")) {
     throw new Error("請填寫有效的發票用 Email。");
+  }
+
+  if (method !== "saved_card" && !input.prime) {
+    throw new Error("缺少 prime");
+  }
+  if (method === "saved_card" && !input.cardId) {
+    throw new Error("缺少 cardId");
   }
 
   const supabase = client();
@@ -186,7 +201,12 @@ export async function chargeTapPayPayment(input: {
   const orderNumber = String(pay.order_number || makeOrderNumber(String(pay.id)));
   const carrier = resolveCarrier(input.carrier);
   const appUrl = getPublicAppUrl();
-  const provider = method === "linepay" ? "TAPPAY_LINEPAY" : "TAPPAY";
+  const provider =
+    method === "linepay"
+      ? "TAPPAY_LINEPAY"
+      : method === "saved_card"
+        ? "TAPPAY_TOKEN"
+        : "TAPPAY";
   const backendNotifyUrl =
     method === "linepay"
       ? `${appUrl}/api/payments/tappay/linepay-notify`
@@ -208,21 +228,40 @@ export async function chargeTapPayPayment(input: {
     .eq("status", "PENDING");
   if (prepError) throw new Error(prepError.message);
 
-  const result = await tapPayPayByPrime({
-    prime: input.prime,
-    amount,
-    orderNumber,
-    details: "K歌+1 媒合服務費",
-    method,
-    cardholder: {
-      name: input.cardholderName || "",
-      email,
-      phone_number: "",
-    },
-    frontendRedirectUrl: `${appUrl}/matches/${pay.match_id}/pay-return?paymentId=${pay.id}`,
-    backendNotifyUrl,
-    threeDomainSecure: method === "card",
-  });
+  const cardholder = {
+    name: input.cardholderName || "",
+    email,
+    phone_number: "",
+  };
+  const frontendRedirectUrl = `${appUrl}/matches/${pay.match_id}/pay-return?paymentId=${pay.id}`;
+
+  let result;
+  if (method === "saved_card") {
+    const secrets = await getSavedCardSecrets(input.userId, String(input.cardId));
+    if (!secrets) throw new Error("找不到已存卡片。");
+    result = await tapPayPayByToken({
+      cardKey: secrets.cardKey,
+      cardToken: secrets.cardToken,
+      amount,
+      orderNumber,
+      details: "K歌+1 媒合服務費",
+      cardholder,
+      frontendRedirectUrl,
+      backendNotifyUrl,
+    });
+  } else {
+    result = await tapPayPayByPrime({
+      prime: String(input.prime),
+      amount,
+      orderNumber,
+      details: "K歌+1 媒合服務費",
+      method: method === "linepay" ? "linepay" : "card",
+      cardholder,
+      frontendRedirectUrl,
+      backendNotifyUrl,
+      threeDomainSecure: method === "card",
+    });
+  }
 
   if (result.status !== 0) {
     throw new Error(result.msg || "TapPay 付款失敗");
@@ -243,7 +282,6 @@ export async function chargeTapPayPayment(input: {
     };
   }
 
-  // LINE Pay 理論上一定會回 payment_url；若無則視為失敗
   if (method === "linepay") {
     throw new Error("未取得 LINE Pay 付款網址");
   }

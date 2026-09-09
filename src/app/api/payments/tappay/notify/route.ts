@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { settleTapPayNotify } from "@/lib/supabase/live-payments";
+import { settleBindCardNotify } from "@/lib/tappay/cards";
 import { isLivePayment } from "@/lib/tappay/env";
 import { logApp, logAppError } from "@/lib/log";
 
 export const dynamic = "force-dynamic";
 
 /**
- * TapPay 3DS backend_notify_url。
- * 付款成功與否以此為準，前端導回不可單獨改狀態。
+ * TapPay 3DS backend_notify_url（付款 + 綁卡 BIND*）。
  */
 export async function POST(req: Request) {
   try {
@@ -22,6 +22,8 @@ export async function POST(req: Request) {
       bank_transaction_id?: string;
       amount?: number;
       msg?: string;
+      card_secret?: Record<string, unknown>;
+      card_info?: Record<string, unknown>;
     };
 
     logApp("api.tappay_notify_received", {
@@ -29,6 +31,14 @@ export async function POST(req: Request) {
       orderNumber: body.order_number,
       hasTradeId: Boolean(body.rec_trade_id),
     });
+
+    if (body.order_number?.startsWith("BIND")) {
+      const bindResult = await settleBindCardNotify(body);
+      if (!bindResult.ok && !("ignored" in bindResult && bindResult.ignored)) {
+        return NextResponse.json(bindResult, { status: 404 });
+      }
+      return NextResponse.json(bindResult);
+    }
 
     const result = await settleTapPayNotify(body);
     if (!result.ok) {

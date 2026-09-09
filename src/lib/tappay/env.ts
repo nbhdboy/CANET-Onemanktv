@@ -22,6 +22,15 @@ export function getTapPayServerConfig() {
   const payByPrimeUrl =
     process.env.TAPPAY_PAY_BY_PRIME_URL ||
     "https://sandbox.tappaysdk.com/tpc/payment/pay-by-prime";
+  const payByTokenUrl =
+    process.env.TAPPAY_PAY_BY_TOKEN_URL ||
+    "https://sandbox.tappaysdk.com/tpc/payment/pay-by-token";
+  const bindCardUrl =
+    process.env.TAPPAY_BIND_CARD_URL ||
+    "https://sandbox.tappaysdk.com/tpc/card/bind";
+  const removeCardUrl =
+    process.env.TAPPAY_REMOVE_CARD_URL ||
+    "https://sandbox.tappaysdk.com/tpc/card/remove";
   const invoiceApiUrl =
     process.env.TAPPAY_INVOICE_API_URL ||
     "https://sandbox-invoice.tappaysdk.com/einvoice/issue";
@@ -37,6 +46,9 @@ export function getTapPayServerConfig() {
     merchantId,
     merchantIdLinePay,
     payByPrimeUrl,
+    payByTokenUrl,
+    bindCardUrl,
+    removeCardUrl,
     invoiceApiUrl,
     sellerIdentifier,
     sellerName,

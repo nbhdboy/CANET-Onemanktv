@@ -20,7 +20,8 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       paymentId?: string;
       prime?: string;
-      method?: "card" | "linepay";
+      cardId?: string;
+      method?: "card" | "linepay" | "saved_card";
       buyerEmail?: string;
       cardholderName?: string;
       carrier?: string;
@@ -28,7 +29,10 @@ export async function POST(req: Request) {
       buyerName?: string;
     };
 
-    if (!body.paymentId || !body.prime) {
+    if (!body.paymentId) {
+      return NextResponse.json({ ok: false, error: "缺少 paymentId" }, { status: 400 });
+    }
+    if (body.method !== "saved_card" && !body.cardId && !body.prime) {
       return NextResponse.json({ ok: false, error: "缺少 paymentId 或 prime" }, { status: 400 });
     }
 
@@ -36,6 +40,7 @@ export async function POST(req: Request) {
       userId: session.id,
       paymentId: body.paymentId,
       prime: body.prime,
+      cardId: body.cardId,
       method: body.method,
       buyerEmail: body.buyerEmail || session.email,
       cardholderName: body.cardholderName,

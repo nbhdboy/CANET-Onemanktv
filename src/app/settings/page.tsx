@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { loadContacts, loadProfile } from "@/lib/app-data";
 import { SettingsForms } from "@/components/settings/SettingsForms";
-import { StageDisc, StagePage, StageTitle } from "@/components/layout/StagePage";
+import { SavedCardSettings } from "@/components/settings/SavedCardSettings";
+import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
 import { avatarPreset } from "@/lib/format";
 import {
   HERO_AGE_COOKIE,
@@ -12,6 +13,8 @@ import {
   parseHeroAge,
 } from "@/lib/constants";
 import { ageFromBirthYear } from "@/lib/time";
+import { getPublicSavedCard } from "@/lib/tappay/cards";
+import { getTapPayPublicConfig, isLivePayment } from "@/lib/tappay/env";
 import type { Search } from "@/lib/route-types";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +28,9 @@ export default async function SettingsPage({
   if (!session) redirect("/login?next=/settings");
   const profile = await loadProfile(session.id);
   const contacts = await loadContacts(session.id);
+  const live = isLivePayment();
+  const savedCard = live ? await getPublicSavedCard(session.id).catch(() => null) : null;
+  const tappay = getTapPayPublicConfig();
 
   const sp = await searchParams;
   const fromQuery = parseHeroAge(typeof sp.age === "string" ? sp.age : null);
@@ -70,6 +76,15 @@ export default async function SettingsPage({
         instagram={contacts?.instagram_handle || ""}
         threads={contacts?.threads_handle || ""}
       />
+      <StageTrack n="03" title="付款方式">
+        <SavedCardSettings
+          card={savedCard}
+          appId={tappay.appId}
+          appKey={tappay.appKey}
+          tappayEnv={tappay.env}
+          live={live}
+        />
+      </StageTrack>
     </StagePage>
   );
 }
