@@ -1,23 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { bookingClickAction, markBookedAction } from "@/actions/match";
+import { bookingClickAction } from "@/actions/match";
 
 export function BookingPanel({
   matchId,
   brandName,
   bookingUrl,
-  isInitiator,
-  marked,
 }: {
   matchId: string;
   brandName: string;
   bookingUrl: string;
-  isInitiator: boolean;
-  marked: boolean;
+  isInitiator?: boolean;
+  marked?: boolean;
 }) {
-  const [done, setDone] = useState(marked);
-
   return (
     <div className="rounded-3xl bg-white card-float p-5 space-y-3">
       <h3 className="font-bold">🎤 下一步：訂 KTV</h3>
@@ -31,19 +26,6 @@ export function BookingPanel({
       >
         前往{brandName}官方訂位
       </a>
-      {isInitiator && (
-        <button
-          type="button"
-          disabled={done}
-          onClick={async () => {
-            const res = await markBookedAction(matchId);
-            if (res.ok) setDone(true);
-          }}
-          className="w-full h-12 rounded-2xl border font-semibold"
-        >
-          {done ? "已標記完成訂位 ✓" : "我已完成訂位 ✓"}
-        </button>
-      )}
       <p className="text-xs text-[var(--muted)]">這只代表使用者自行確認，平台不向 KTV 驗證訂位真實性。</p>
     </div>
   );

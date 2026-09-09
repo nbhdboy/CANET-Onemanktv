@@ -144,8 +144,6 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
           matchId={match.id}
           brandName={brand.name}
           bookingUrl={brand.booking_url}
-          isInitiator={match.initiator_id === session.id}
-          marked={match.booking_status === "MARKED_DONE"}
         />
       )}
 

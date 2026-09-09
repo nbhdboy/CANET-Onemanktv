@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { logoutAction } from "@/actions/auth";
+import { LogoutButton } from "@/components/profile/LogoutButton";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { avatarPreset } from "@/lib/format";
 import { Stars } from "@/components/ui/Stars";
@@ -176,12 +177,7 @@ export function ProfileBoard({
 
             <Track n="03" title="離席">
               <form action={logoutAction}>
-                <button
-                  type="submit"
-                  className="flex min-h-12 w-full max-w-xs items-center justify-center border border-white text-sm font-semibold tracking-[0.18em] text-white transition-colors hover:bg-white hover:text-[#1a1040]"
-                >
-                  登出
-                </button>
+                <LogoutButton />
               </form>
             </Track>
           </div>

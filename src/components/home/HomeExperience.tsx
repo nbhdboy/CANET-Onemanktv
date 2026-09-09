@@ -7,6 +7,7 @@ import { ToonHero } from "@/components/hero/ToonHero";
 import { FeedFilters } from "@/components/feed/FeedFilters";
 import { SpatialRequestDeck } from "@/components/feed/SpatialRequestDeck";
 import { EmptyFeed } from "@/components/feed/EmptyFeed";
+import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
 import { fetchFeedAction } from "@/actions/match";
 import { HERO_IMAGES, rememberHeroAge } from "@/lib/constants";
 import type { KtvBrand, KtvVenue, RequestCardData } from "@/lib/types";
@@ -124,9 +125,15 @@ export function HomeExperience({
         </div>
         <div
           className="relative mt-8 w-full overflow-x-clip pb-36 lg:pb-16"
-          style={{ opacity: isPending ? 0.55 : 1, transition: "opacity 200ms ease" }}
+          style={{ opacity: isPending ? 0.85 : 1, transition: "opacity 200ms ease" }}
         >
-          {items.length === 0 ? (
+          {isPending ? (
+            <div className="mx-auto max-w-[1120px] px-4">
+              <div className="rounded-3xl bg-white/90 p-10 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
+                <EqualizerLoader label="載入中" />
+              </div>
+            </div>
+          ) : items.length === 0 ? (
             <div className="mx-auto max-w-[1120px] px-4">
               <EmptyFeed ageLabel={hero.label} age={hero.age} onColor />
             </div>

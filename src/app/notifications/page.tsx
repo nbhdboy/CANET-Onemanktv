@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { loadNotifications, loadProfile, loadUnread } from "@/lib/app-data";
 import { markNotificationsReadAction } from "@/actions/admin";
-import { StageDisc, StagePage, StageTitle, StageTrack, ghostBtn } from "@/components/layout/StagePage";
+import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
+import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton";
 import { avatarPreset } from "@/lib/format";
 import { ageFromBirthYear, formatDateTime, relativeFromNow } from "@/lib/time";
 import {
@@ -65,9 +66,7 @@ export default async function NotificationsPage({
 
       <StageTrack n="01" title="未讀與已讀">
         <form action={markNotificationsReadAction}>
-          <button type="submit" className={ghostBtn}>
-            全部標為已讀
-          </button>
+          <MarkAllReadButton />
         </form>
       </StageTrack>
 
