@@ -92,13 +92,7 @@ export async function runSupabaseMaintenance() {
         ? "這次媒合付款時間已結束，歌局已重新開放在找歌友。"
         : "這次媒合付款時間已結束，且唱歌時間已過，這場不會再出現在找歌友。";
 
-      const creditHint =
-        "若你已付款，金額已轉成點數，下次可用點數全額支付服務費。";
-
       for (const uid of [match.initiator_id, match.participant_id]) {
-        const paid = (payments || []).find(
-          (p) => p.user_id === uid && p.status === "PAID" && Number(p.fee_due) > 0,
-        );
         await client.from("notifications").insert({
           user_id: uid,
           type: "payment_timeout",
@@ -106,7 +100,7 @@ export async function runSupabaseMaintenance() {
             matchId: match.id,
             requestId: match.request_id,
             reopened: canReopen,
-            message: paid ? `${timeoutMessage}${creditHint}` : timeoutMessage,
+            message: timeoutMessage,
           },
           is_read: false,
         });

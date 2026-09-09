@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { ProfileBoard } from "@/components/profile/ProfileBoard";
 import { getSession } from "@/lib/session";
-import { loadCreditLedgerApp, loadProfile, loadUnread } from "@/lib/app-data";
+import { loadProfile, loadUnread } from "@/lib/app-data";
 import { reviewTagStats } from "@/lib/reviews";
 import { accountAgeLabel, ageFromBirthYear } from "@/lib/time";
 import {
@@ -34,7 +34,6 @@ export default async function ProfilePage({
 
   const stats = reviewTagStats(session.id);
   const unread = await loadUnread(session.id);
-  const creditLedger = await loadCreditLedgerApp(session.id);
 
   return (
     <ProfileBoard
@@ -51,7 +50,6 @@ export default async function ProfilePage({
       friendlyPct={stats.pct("friendly")}
       singAgainPct={Math.max(0, 100 - stats.pct("no_show"))}
       points={Number(profile.points ?? 0)}
-      creditLedger={creditLedger}
     />
   );
 }

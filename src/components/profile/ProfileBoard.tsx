@@ -20,7 +20,6 @@ export function ProfileBoard({
   friendlyPct,
   singAgainPct,
   points,
-  creditLedger,
 }: {
   nickname: string;
   avatarUrl?: string | null;
@@ -35,13 +34,6 @@ export function ProfileBoard({
   friendlyPct: number;
   singAgainPct: number;
   points: number;
-  creditLedger: Array<{
-    id: string;
-    delta: number;
-    message: string | null;
-    reason: string;
-    created_at: string;
-  }>;
 }) {
   const hero = heroByAge(ageBand);
   const preset = avatarPreset(avatarUrl);
@@ -109,6 +101,26 @@ export function ProfileBoard({
                 </article>
               </div>
             </div>
+
+            <div className="mx-auto mt-6 w-full max-w-[280px] border border-white/50 px-5 py-4 text-center">
+              <p className="text-[10px] font-semibold tracking-[0.16em] text-white/75">點數</p>
+              <p
+                className="mt-2 text-white"
+                style={{
+                  fontFamily: "Anton, sans-serif",
+                  fontSize: 44,
+                  letterSpacing: "0.04em",
+                  lineHeight: 1,
+                }}
+              >
+                {points}
+              </p>
+              <p className="mt-2 text-sm text-white/85">1 點 = NT$1 服務費</p>
+              <p className="mt-3 text-xs leading-relaxed text-white/70">
+                已付款但對方逾時未付時，金額會轉成點數。下次可全額用點數支付（不可與刷卡／LINE Pay
+                混用），異動會以通知告知。
+              </p>
+            </div>
           </aside>
 
           <div className="compose-panel space-y-8">
@@ -150,45 +162,7 @@ export function ProfileBoard({
               </p>
             </Track>
 
-            <Track n="02" title="點數">
-              <div className="border border-white/50 px-5 py-4">
-                <p
-                  className="text-white"
-                  style={{
-                    fontFamily: "Anton, sans-serif",
-                    fontSize: 40,
-                    letterSpacing: "0.04em",
-                    lineHeight: 1,
-                  }}
-                >
-                  {points}
-                </p>
-                <p className="mt-2 text-sm text-white/85">目前可用點數（1 點 = NT$1 服務費）</p>
-                <p className="mt-3 text-sm text-white/75">
-                  若你已付款但對方逾時未付，系統會把已付金額轉成點數。下次媒合可全額用點數支付（不可與刷卡／LINE
-                  Pay 混用），且不開發票。
-                </p>
-              </div>
-              {creditLedger.length === 0 ? (
-                <p className="text-sm text-white/70">尚無點數異動紀錄。</p>
-              ) : (
-                creditLedger.slice(0, 5).map((row) => (
-                  <article key={row.id} className="border border-white/35 px-5 py-3 text-sm">
-                    <p className="font-semibold">
-                      {row.delta > 0 ? `+${row.delta}` : row.delta} 點
-                    </p>
-                    <p className="mt-1 text-white/80">
-                      {row.message ||
-                        (row.reason === "REDEEM"
-                          ? "使用點數支付服務費"
-                          : "點數異動")}
-                    </p>
-                  </article>
-                ))
-              )}
-            </Track>
-
-            <Track n="03" title="帳號入口">
+            <Track n="02" title="帳號入口">
               <GhostRow href="/settings" label="聯絡方式與設定" cta="打開 →" />
               <GhostRow
                 href="/notifications"
@@ -200,7 +174,7 @@ export function ProfileBoard({
               {isAdmin ? <GhostRow href="/admin" label="Admin 後台" cta="打開 →" /> : null}
             </Track>
 
-            <Track n="04" title="離席">
+            <Track n="03" title="離席">
               <form action={logoutAction}>
                 <button
                   type="submit"

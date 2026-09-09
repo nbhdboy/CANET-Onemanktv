@@ -94,21 +94,25 @@ export function runMaintenance() {
         ) VALUES (?, ?, ?, ?, 'MATCH_TIMEOUT_CREDIT', ?, ?, ?, ?)`,
       ).run(nid(), pay.user_id, pay.fee_due, next, message, match.id, pay.id, now);
       db.prepare(`UPDATE payments SET credited_at = ? WHERE id = ?`).run(now, pay.id);
+      notify(pay.user_id, "points_credit", {
+        matchId: match.id,
+        paymentId: pay.id,
+        delta: pay.fee_due,
+        balance: next,
+        message: `+${pay.fee_due} 點：${message}`,
+      });
     }
 
     const timeoutMessage = canReopen
       ? "這次媒合付款時間已結束，歌局已重新開放在找歌友。"
       : "這次媒合付款時間已結束，且唱歌時間已過，這場不會再出現在找歌友。";
-    const creditHint =
-      "若你已付款，金額已轉成點數，下次可用點數全額支付服務費。";
 
     for (const uid of [match.initiator_id, match.participant_id]) {
-      const paid = pays.find((p) => p.user_id === uid && p.status === "PAID" && p.fee_due > 0);
       notify(uid, "payment_timeout", {
         matchId: match.id,
         requestId: match.request_id,
         reopened: canReopen,
-        message: paid ? `${timeoutMessage}${creditHint}` : timeoutMessage,
+        message: timeoutMessage,
       });
     }
   });
@@ -812,6 +816,13 @@ export function settlePointsPayment(userId: string, paymentId: string) {
     );
   });
   tx();
+  notify(userId, "points_redeem", {
+    matchId: pay.match_id,
+    paymentId,
+    delta: -pay.fee_due,
+    balance: next,
+    message: `-${pay.fee_due} 點：使用 ${pay.fee_due} 點支付媒合服務費。`,
+  });
   track("payment_success", userId, {
     paymentId,
     matchId: pay.match_id,

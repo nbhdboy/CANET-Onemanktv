@@ -100,6 +100,19 @@ export async function grantPointsFromPaidPayment(input: {
     .eq("id", input.paymentId)
     .is("credited_at", null);
 
+  await client.from("notifications").insert({
+    user_id: input.userId,
+    type: "points_credit",
+    payload: {
+      matchId: input.matchId,
+      paymentId: input.paymentId,
+      delta: input.amount,
+      balance: next,
+      message: `+${input.amount} 點：${message}`,
+    },
+    is_read: false,
+  });
+
   logApp("credits.granted", {
     userId: input.userId,
     paymentId: input.paymentId,
@@ -180,6 +193,19 @@ export async function redeemPointsForPayment(userId: string, paymentId: string) 
     source_match_id: String(pay.match_id),
     source_payment_id: paymentId,
     created_at: now,
+  });
+
+  await client.from("notifications").insert({
+    user_id: userId,
+    type: "points_redeem",
+    payload: {
+      matchId: pay.match_id,
+      paymentId,
+      delta: -amount,
+      balance: next,
+      message: `-${amount} 點：${message}`,
+    },
+    is_read: false,
   });
 
   logApp("credits.redeemed", {
