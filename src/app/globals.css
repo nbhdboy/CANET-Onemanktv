@@ -180,6 +180,93 @@ textarea {
 .compose-glass-field {
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+  color: #1a1040;
+  color-scheme: light;
+}
+
+.compose-glass-field:focus {
+  outline: none;
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.08),
+    0 0 0 2px rgba(255, 255, 255, 0.72);
+}
+
+.compose-glass-field[type="date"],
+.compose-glass-field[type="time"] {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-inline: 0.95rem 0.7rem;
+  font: inherit;
+  letter-spacing: 0.01em;
+}
+
+.compose-glass-field[type="date"]::-webkit-calendar-picker-indicator,
+.compose-glass-field[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+  margin-left: 0.25rem;
+  border-radius: 0.4rem;
+  padding: 0.15rem;
+  transition: opacity 140ms ease, background-color 140ms ease;
+}
+
+.compose-glass-field[type="date"]::-webkit-calendar-picker-indicator:hover,
+.compose-glass-field[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.9;
+  background-color: rgba(26, 16, 64, 0.06);
+}
+
+.compose-glass-field[type="date"]::-webkit-datetime-edit,
+.compose-glass-field[type="time"]::-webkit-datetime-edit {
+  padding: 0;
+}
+
+.compose-glass-field[type="date"]::-webkit-datetime-edit-fields-wrapper,
+.compose-glass-field[type="time"]::-webkit-datetime-edit-fields-wrapper {
+  padding: 0;
+}
+
+.compose-glass-field[type="date"]::-webkit-datetime-edit-text,
+.compose-glass-field[type="time"]::-webkit-datetime-edit-text {
+  color: #6b6280;
+  padding: 0 0.15rem;
+}
+
+.compose-glass-field[type="date"]::-webkit-datetime-edit-year-field,
+.compose-glass-field[type="date"]::-webkit-datetime-edit-month-field,
+.compose-glass-field[type="date"]::-webkit-datetime-edit-day-field,
+.compose-glass-field[type="time"]::-webkit-datetime-edit-hour-field,
+.compose-glass-field[type="time"]::-webkit-datetime-edit-minute-field,
+.compose-glass-field[type="time"]::-webkit-datetime-edit-ampm-field {
+  color: #1a1040;
+  padding: 0.1rem 0.15rem;
+  border-radius: 0.35rem;
+}
+
+.compose-glass-field[type="date"]::-webkit-datetime-edit-year-field:focus,
+.compose-glass-field[type="date"]::-webkit-datetime-edit-month-field:focus,
+.compose-glass-field[type="date"]::-webkit-datetime-edit-day-field:focus,
+.compose-glass-field[type="time"]::-webkit-datetime-edit-hour-field:focus,
+.compose-glass-field[type="time"]::-webkit-datetime-edit-minute-field:focus,
+.compose-glass-field[type="time"]::-webkit-datetime-edit-ampm-field:focus {
+  background: rgba(26, 16, 64, 0.08);
+  color: #1a1040;
+  outline: none;
+}
+
+.compose-glass-time {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.compose-glass-time-sep {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 700;
+  font-size: 1.05rem;
+  line-height: 1;
 }
 
 .compose-glass-chip {

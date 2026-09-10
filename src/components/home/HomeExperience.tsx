@@ -144,13 +144,15 @@ export function HomeExperience({
             venues={venues}
             current={{ ...activeFilters, age: hero.age }}
             onColor
+            accent={hero.glassGlow}
+            accentSoft={hero.glassGlowSoft}
             onApply={applyFilters}
           />
         </div>
         <div className="relative mt-8 w-full overflow-x-clip pb-36 lg:pb-16">
           {isPending ? (
             <div className="mx-auto max-w-[1120px] px-4">
-              <div className="rounded-3xl bg-white/90 p-10 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
+              <div className="compose-glass relative overflow-hidden rounded-[28px] p-10">
                 <EqualizerLoader label="載入中" />
               </div>
             </div>
@@ -163,6 +165,8 @@ export function HomeExperience({
                 ctaFrom={hero.ctaFrom}
                 ctaMid={hero.ctaMid}
                 ctaTo={hero.ctaTo}
+                accent={hero.glassGlow}
+                accentSoft={hero.glassGlowSoft}
               />
             </div>
           ) : (

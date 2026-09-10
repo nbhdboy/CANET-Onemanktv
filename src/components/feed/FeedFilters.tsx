@@ -19,6 +19,8 @@ export function FeedFilters({
   venues,
   current,
   onColor = false,
+  accent,
+  accentSoft,
   onApply,
 }: {
   cities: string[];
@@ -26,6 +28,8 @@ export function FeedFilters({
   venues: KtvVenue[];
   current: FeedFilterState;
   onColor?: boolean;
+  accent?: string;
+  accentSoft?: string;
   onApply?: (next: FeedFilterState) => void;
 }) {
   const when = current.when || "";
@@ -62,19 +66,24 @@ export function FeedFilters({
     { id: "tonight", label: "今晚" },
     { id: "tomorrow", label: "明天" },
   ];
-  const idle = onColor
-    ? "bg-white/20 text-white border border-white/35"
-    : "bg-white text-foreground";
-  const active = onColor
-    ? "bg-white text-foreground"
+
+  const glass = onColor;
+  const chipAccent = accent || "#F472B6";
+  const chipAccentSoft = accentSoft || accent || "#FB7185";
+
+  const idle = glass
+    ? "compose-glass-chip text-white"
+    : "bg-white text-foreground border border-black/10";
+  const active = glass
+    ? "compose-glass-chip is-on text-white"
     : "bg-purple-700 text-white";
-  const field = onColor
-    ? "rounded-xl bg-white/90 px-2.5 h-10 text-sm text-foreground"
+  const field = glass
+    ? "compose-glass-field w-full rounded-2xl border-0 px-3 h-11 text-sm text-[#1a1040] outline-none"
     : "rounded-xl bg-white px-2.5 h-10 text-sm";
   const chipCls =
-    "shrink-0 rounded-full px-3 h-9 text-xs font-medium inline-flex items-center";
-  const clearCls = onColor
-    ? "shrink-0 rounded-full border border-white/70 px-3 h-9 text-xs font-medium text-white transition-colors hover:bg-white hover:text-[#1a1040]"
+    "shrink-0 rounded-full px-3.5 h-9 text-xs font-medium inline-flex items-center cursor-pointer";
+  const clearCls = glass
+    ? "compose-glass-chip shrink-0 rounded-full px-3.5 h-9 text-xs font-medium text-white transition-colors hover:bg-white/25"
     : "shrink-0 rounded-full border border-black/20 px-3 h-9 text-xs font-medium transition-colors hover:bg-black/5";
 
   const hasFilters = Boolean(when || city || brand || venue || posted);
@@ -140,20 +149,31 @@ export function FeedFilters({
     setVenue(nextVenues.some((v) => v.id === venue) ? venue : "");
   }
 
-  return (
-    <div className="space-y-3">
+  const filtersBody = (
+    <>
       <div className="flex items-center gap-2">
         <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5">
-          {chips.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => apply({ when: when === c.id ? undefined : c.id })}
-              className={`${chipCls} ${when === c.id ? active : idle}`}
-            >
-              {c.label}
-            </button>
-          ))}
+          {chips.map((c) => {
+            const on = when === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => apply({ when: when === c.id ? undefined : c.id })}
+                className={`${chipCls} ${on ? active : idle}`}
+                style={
+                  glass && on
+                    ? {
+                        background: `linear-gradient(135deg, ${chipAccentSoft}, ${chipAccent})`,
+                        boxShadow: `0 8px 18px ${chipAccent}55`,
+                      }
+                    : undefined
+                }
+              >
+                {c.label}
+              </button>
+            );
+          })}
         </div>
         {hasFilters ? (
           <button
@@ -184,7 +204,8 @@ export function FeedFilters({
           e.preventDefault();
           apply({});
         }}
-        className="grid grid-cols-2 gap-1.5 sm:grid-cols-4"
+        className={glass ? "mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4" : "grid grid-cols-2 gap-1.5 sm:grid-cols-4"}
+        style={glass ? { colorScheme: "light" } : undefined}
       >
         {when ? <input type="hidden" name="when" value={when} /> : null}
         {current.age ? <input type="hidden" name="age" value={current.age} /> : null}
@@ -245,13 +266,40 @@ export function FeedFilters({
         </select>
         <button
           type="submit"
-          className={`col-span-2 sm:col-span-4 h-10 rounded-xl text-sm font-medium ${
-            onColor ? "bg-white text-foreground" : "bg-white"
-          }`}
+          className={
+            glass
+              ? "col-span-2 sm:col-span-4 inline-flex h-11 items-center justify-center rounded-full text-sm font-semibold tracking-[0.12em] text-white transition-transform hover:scale-[1.01]"
+              : "col-span-2 sm:col-span-4 h-10 rounded-xl text-sm font-medium bg-white"
+          }
+          style={
+            glass
+              ? {
+                  background: `linear-gradient(110deg, ${chipAccentSoft} 0%, ${chipAccent} 55%, ${chipAccentSoft} 100%)`,
+                  boxShadow: `0 12px 28px ${chipAccent}55`,
+                }
+              : undefined
+          }
         >
           套用篩選
         </button>
       </form>
+    </>
+  );
+
+  if (!glass) {
+    return <div className="space-y-3">{filtersBody}</div>;
+  }
+
+  return (
+    <div className="compose-glass relative overflow-hidden rounded-[24px] p-4 sm:p-5">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full opacity-50 blur-xl"
+        style={{
+          background: `radial-gradient(circle, ${chipAccent}88 0%, transparent 70%)`,
+        }}
+      />
+      <div className="relative space-y-1">{filtersBody}</div>
     </div>
   );
 }

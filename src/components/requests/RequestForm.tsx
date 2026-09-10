@@ -32,7 +32,10 @@ import type { ActionResult, KtvBrand, KtvVenue } from "@/lib/types";
 const init: ActionResult = { ok: false };
 
 const field =
-  "compose-glass-field w-full rounded-2xl border-0 px-4 h-12 text-[#1a1040] outline-none focus:ring-2 focus:ring-white/70";
+  "compose-glass-field w-full rounded-2xl border-0 px-4 h-12 text-[#1a1040] outline-none";
+
+const TIME_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
+const TIME_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 
 function prettyWhen(date: string, time: string) {
   if (!date || !time) return "";
@@ -374,14 +377,7 @@ export function RequestForm({
                       />
                     </IconField>
                     <IconField icon={<Clock3 size={16} />} label="開唱時間">
-                      <input
-                        name="time"
-                        type="time"
-                        required
-                        value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                        className={field}
-                      />
+                      <GlassTimeSelect value={time} onChange={setTime} required />
                     </IconField>
                     <IconField icon={<Music2 size={16} />} label="預計唱多久">
                       <select
@@ -591,14 +587,76 @@ function IconField({
   children: ReactNode;
 }) {
   return (
-    <label className="block min-w-0 space-y-1.5">
-      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-white">
+    <div className="block min-w-0 space-y-1.5">
+      <p className="inline-flex items-center gap-1.5 text-sm font-medium text-white">
         <span className="text-white/75" aria-hidden>
           {icon}
         </span>
         {label}
-      </span>
+      </p>
       {children}
-    </label>
+    </div>
+  );
+}
+
+function GlassTimeSelect({
+  value,
+  onChange,
+  required,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  required?: boolean;
+}) {
+  const [hour = "", minute = ""] = value ? value.split(":") : ["", ""];
+  const snappedMinute = TIME_MINUTES.includes(minute) ? minute : "";
+
+  function setPart(nextHour: string, nextMinute: string) {
+    if (!nextHour && !nextMinute) {
+      onChange("");
+      return;
+    }
+    onChange(`${nextHour || "00"}:${nextMinute || "00"}`);
+  }
+
+  return (
+    <div className="compose-glass-time">
+      <input type="hidden" name="time" value={value} />
+      <select
+        aria-label="開唱時間（時）"
+        required={required}
+        value={hour}
+        onChange={(e) => setPart(e.target.value, snappedMinute || "00")}
+        className={field}
+      >
+        <option value="" disabled>
+          --
+        </option>
+        {TIME_HOURS.map((h) => (
+          <option key={h} value={h}>
+            {h}
+          </option>
+        ))}
+      </select>
+      <span className="compose-glass-time-sep" aria-hidden>
+        :
+      </span>
+      <select
+        aria-label="開唱時間（分）"
+        required={required}
+        value={snappedMinute}
+        onChange={(e) => setPart(hour || "00", e.target.value)}
+        className={field}
+      >
+        <option value="" disabled>
+          --
+        </option>
+        {TIME_MINUTES.map((m) => (
+          <option key={m} value={m}>
+            {m}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 }
