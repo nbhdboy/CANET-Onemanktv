@@ -1,7 +1,3 @@
-"use client";
-
-import { useImageAccent } from "@/hooks/useImageAccent";
-
 export function StageDisc({
   emoji,
   badge,
@@ -21,16 +17,8 @@ export function StageDisc({
   imageUrl?: string | null;
   imageFit?: "cover" | "contain";
 }) {
-  const accent = useImageAccent(imageUrl, { from, to });
-  const glowFrom = imageUrl ? accent.from : from;
-
   return (
     <div className="relative mx-auto flex h-[400px] max-w-[280px] items-center justify-center">
-      <div
-        aria-hidden
-        className="absolute h-[72%] w-[72%] rounded-full transition-[background] duration-500"
-        style={{ background: `radial-gradient(circle, ${glowFrom} 0%, transparent 70%)` }}
-      />
       <div className="deck-float relative">
         <article
           className="relative flex h-[280px] w-[280px] flex-col items-center justify-center overflow-hidden rounded-full text-center text-white"
@@ -46,7 +34,6 @@ export function StageDisc({
             <img
               src={imageUrl}
               alt=""
-              crossOrigin="anonymous"
               className={`absolute inset-0 h-full w-full ${
                 imageFit === "contain" ? "object-contain p-6" : "object-cover"
               }`}

@@ -86,11 +86,6 @@ export function RequestStage({
 
         <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
           <div className="relative mx-auto flex w-full max-w-[560px] items-center justify-center overflow-x-clip py-6">
-            <div
-              aria-hidden
-              className="stage-bloom absolute h-[72%] w-[72%] rounded-full"
-              style={{ background: `radial-gradient(circle, ${preset.from} 0%, transparent 70%)` }}
-            />
             <InfoDisc
               className="stage-disc stage-disc-a absolute left-[2%] top-[8%] z-10 hidden sm:flex"
               size="sm"

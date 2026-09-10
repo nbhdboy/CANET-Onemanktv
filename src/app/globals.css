@@ -114,10 +114,6 @@ textarea {
   background: linear-gradient(135deg, #7c3aed 0%, #ec4899 52%, #22d3ee 100%);
 }
 
-.stage-bloom {
-  animation: stage-bloom 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
 .stage-disc {
   animation: stage-pop 780ms cubic-bezier(0.16, 1.12, 0.28, 1) both;
 }
@@ -134,11 +130,6 @@ textarea {
 @keyframes stage-pop {
   from { opacity: 0; transform: scale(0.72); }
   to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes stage-bloom {
-  from { opacity: 0; transform: scale(0.4); }
-  to { opacity: 0.55; transform: scale(1); }
 }
 
 @keyframes stage-copy {
@@ -170,7 +161,6 @@ textarea {
   .float-slow,
   .deck-float,
   .deck-float-focus,
-  .stage-bloom,
   .stage-disc,
   .stage-copy,
   .compose-poster,

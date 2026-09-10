@@ -5,7 +5,6 @@ import { ArrowLeft } from "lucide-react";
 import { logoutAction } from "@/actions/auth";
 import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
 import { LogoutButton } from "@/components/profile/LogoutButton";
-import { useImageAccent } from "@/hooks/useImageAccent";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
 import { Stars } from "@/components/ui/Stars";
@@ -43,8 +42,6 @@ export function ProfileBoard({
   const hero = heroByAge(ageBand);
   const preset = avatarPresetOrFallback(avatarUrl);
   const photo = isPhotoAvatar(avatarUrl) ? avatarUrl : null;
-  const accent = useImageAccent(photo, { from: preset.from, to: preset.to });
-  const glowFrom = photo ? accent.from : preset.from;
   const displayName = nickname || "尚未設定暱稱";
 
   return (
@@ -83,13 +80,6 @@ export function ProfileBoard({
               LIVE 名片
             </p>
             <div className="relative mx-auto flex h-[400px] max-w-[280px] items-center justify-center">
-              <div
-                aria-hidden
-                className="absolute h-[72%] w-[72%] rounded-full transition-[background] duration-500"
-                style={{
-                  background: `radial-gradient(circle, ${glowFrom} 0%, transparent 70%)`,
-                }}
-              />
               <div className="deck-float relative">
                 <article
                   className="relative flex h-[280px] w-[280px] flex-col items-center justify-center overflow-hidden rounded-full text-center text-white"
@@ -105,7 +95,6 @@ export function ProfileBoard({
                     <img
                       src={photo}
                       alt=""
-                      crossOrigin="anonymous"
                       className="absolute inset-0 h-full w-full object-cover"
                     />
                   ) : null}
