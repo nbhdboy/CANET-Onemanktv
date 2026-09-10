@@ -1,6 +1,13 @@
 import { randomUUID } from "node:crypto";
-import { isPast } from "@/lib/time";
-import { ageFromBirthYear } from "@/lib/time";
+import {
+  ageFromBirthYear,
+  hoursUntil,
+  isPast,
+  parseUtc,
+  taipeiParts,
+  todayKey,
+  tomorrowKey,
+} from "@/lib/time";
 import { ageBandFromYears } from "@/lib/constants";
 import { hasContact, parseJsonArray, toPublicProfile } from "@/lib/format";
 import { logApp, logAppError } from "@/lib/log";
@@ -13,6 +20,28 @@ import {
 } from "@/lib/supabase/server";
 import type { FeedFilters } from "@/lib/match";
 import type { PublicProfile, RequestCardData } from "@/lib/types";
+
+function matchesWhenFilter(singAt: string, when?: string) {
+  if (!when) return true;
+  const parts = taipeiParts(singAt);
+  if (when === "now") return hoursUntil(singAt) <= 2;
+  if (when === "today") return parts.dateKey === todayKey();
+  if (when === "tonight") return parts.dateKey === todayKey() && Number(parts.hour) >= 18;
+  if (when === "tomorrow") return parts.dateKey === tomorrowKey();
+  return true;
+}
+
+function matchesPostedFilter(createdAt: string, posted?: string) {
+  if (!posted) return true;
+  const hours =
+    posted === "1h" ? 1 : posted === "3h" ? 3 : posted === "6h" ? 6 : posted === "24h" ? 24 : null;
+  if (hours == null) return true;
+  return nowWithinHours(createdAt, hours);
+}
+
+function nowWithinHours(iso: string, hours: number) {
+  return parseUtc(iso).getTime() >= Date.now() - hours * 3_600_000;
+}
 
 const REQUEST_SELECT = `
   id,
@@ -277,6 +306,8 @@ export async function listSupabaseFeed(
       if (filters.city && item.city !== filters.city) return false;
       if (filters.brand && item.brand_id !== filters.brand) return false;
       if (filters.age && item.age_band !== filters.age) return false;
+      if (!matchesWhenFilter(item.sing_at, filters.when)) return false;
+      if (!matchesPostedFilter(item.created_at, filters.posted)) return false;
       return true;
     });
 }
