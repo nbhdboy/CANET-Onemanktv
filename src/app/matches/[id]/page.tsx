@@ -188,7 +188,11 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
         </section>
 
         {counterpart ? (
-          <UnlockedContacts matchId={match.id} nickname={counterpart.nickname || "歌友"} />
+          <UnlockedContacts
+            matchId={match.id}
+            nickname={counterpart.nickname || "歌友"}
+            accent={hero.glassGlow}
+          />
         ) : null}
 
         {brand ? (
@@ -196,6 +200,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
             matchId={match.id}
             brandName={brand.name}
             bookingUrl={brand.booking_url}
+            {...accents}
           />
         ) : null}
 
