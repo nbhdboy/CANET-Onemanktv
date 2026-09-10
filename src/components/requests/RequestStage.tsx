@@ -267,10 +267,13 @@ function InfoDisc({
   title: string;
   sub: string;
 }) {
-  const dim = size === "lg" ? "h-[240px] w-[240px] sm:h-[300px] sm:w-[300px] lg:h-[340px] lg:w-[340px]" : "h-[132px] w-[132px] lg:h-[156px] lg:w-[156px]";
+  const dim =
+    size === "lg"
+      ? "h-[240px] w-[240px] sm:h-[300px] sm:w-[300px] lg:h-[340px] lg:w-[340px]"
+      : "h-[132px] w-[132px] lg:h-[156px] lg:w-[156px]";
   return (
     <div
-      className={`relative flex flex-col items-center justify-center overflow-hidden rounded-full text-center text-white ${dim} ${className ?? ""}`}
+      className={`relative aspect-square shrink-0 overflow-hidden rounded-full text-center text-white ${dim} ${className ?? ""}`}
       style={{
         background: imageUrl
           ? "#12081f"
@@ -280,10 +283,14 @@ function InfoDisc({
     >
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img
+          src={imageUrl}
+          alt=""
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+        />
       ) : null}
       <div
-        className={`relative z-10 flex h-full w-full flex-col items-center justify-center ${
+        className={`absolute inset-0 z-10 flex flex-col items-center justify-center px-3 ${
           imageUrl ? "bg-gradient-to-b from-black/35 via-black/20 to-black/55" : ""
         }`}
       >
@@ -294,15 +301,19 @@ function InfoDisc({
         ) : null}
         <p
           className={`text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70 ${
-            imageUrl ? "mt-10" : "mt-2"
+            imageUrl ? "mt-8" : "mt-2"
           }`}
         >
           {kicker}
         </p>
-        <p className={`mt-1 font-bold leading-tight ${size === "lg" ? "text-xl" : "text-sm"}`}>
+        <p
+          className={`mt-1 max-w-full truncate font-bold leading-tight ${
+            size === "lg" ? "text-xl" : "text-sm"
+          }`}
+        >
           {title}
         </p>
-        <p className="mt-0.5 px-3 text-[11px] text-white/80">{sub}</p>
+        <p className="mt-0.5 max-w-full truncate text-[11px] text-white/80">{sub}</p>
       </div>
     </div>
   );
