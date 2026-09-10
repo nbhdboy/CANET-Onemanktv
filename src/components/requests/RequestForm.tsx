@@ -2,7 +2,20 @@
 
 import { useActionState, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Building2,
+  CalendarDays,
+  Clock3,
+  Lock,
+  MapPin,
+  MessageCircle,
+  Mic2,
+  Music2,
+  Send,
+  Wallet,
+} from "lucide-react";
 import { createRequestAction } from "@/actions/match";
 import {
   DURATION_OPTIONS,
@@ -19,7 +32,7 @@ import type { ActionResult, KtvBrand, KtvVenue } from "@/lib/types";
 const init: ActionResult = { ok: false };
 
 const field =
-  "w-full rounded-2xl border border-black/15 bg-white px-4 h-12 text-[#1a1040]";
+  "compose-glass-field w-full rounded-2xl border-0 px-4 h-12 text-[#1a1040] outline-none focus:ring-2 focus:ring-white/70";
 
 function prettyWhen(date: string, time: string) {
   if (!date || !time) return "";
@@ -86,6 +99,10 @@ export function RequestForm({
   const split = cost ? Math.round(Number(cost) / 2) : null;
   const hours = Number(duration) || 3;
 
+  const accent = hero.glassGlow;
+  const accentSoft = hero.glassGlowSoft;
+  const ctaGradient = `linear-gradient(110deg, ${hero.ctaTo} 0%, ${accent} 48%, ${hero.ctaFrom} 100%)`;
+
   function pickBrand(id: string) {
     setBrandId(id);
     const nextCity = preferredCity(
@@ -103,7 +120,7 @@ export function RequestForm({
   }
 
   return (
-    <main className="relative min-h-screen text-white" style={{ backgroundColor: hero.bg }}>
+    <main className="relative min-h-screen overflow-hidden text-white" style={{ backgroundColor: hero.bg }}>
       <div className="grain pointer-events-none absolute inset-0 opacity-35" />
       <div
         aria-hidden
@@ -117,6 +134,16 @@ export function RequestForm({
       >
         排場
       </div>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-16 top-24 h-56 w-56 rounded-full opacity-50 blur-2xl"
+        style={{ background: `radial-gradient(circle, ${accent}aa 0%, transparent 70%)` }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-10 left-[38%] h-40 w-40 rounded-full opacity-40 blur-2xl"
+        style={{ background: `radial-gradient(circle, ${accentSoft}88 0%, transparent 70%)` }}
+      />
 
       <form
         action={formAction}
@@ -217,225 +244,306 @@ export function RequestForm({
             </p>
           </aside>
 
-          <div className="compose-panel space-y-8">
-            <div>
-              <h1
-                className="uppercase text-white"
-                style={{
-                  fontFamily: "Anton, sans-serif",
-                  fontSize: "clamp(40px, 7vw, 76px)",
-                  letterSpacing: "-0.03em",
-                  lineHeight: 0.9,
-                }}
-              >
-                排一場
-                <br />
-                剛剛好
-              </h1>
-              <p className="mt-3 max-w-md text-sm text-white/88">
-                每一筆需求最多只能成功媒合 1 位 +1。預覽卡會跟著你填的內容變，填完就可以發布。
-              </p>
-            </div>
+          <div className="compose-panel relative">
+            <div className="compose-glass relative overflow-hidden rounded-[28px] p-5 sm:p-7 lg:p-8">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-8 -top-10 h-36 w-36 rounded-full opacity-60 blur-xl"
+                style={{ background: `radial-gradient(circle, ${accent}99 0%, transparent 68%)` }}
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -bottom-16 -right-10 h-44 w-44 rounded-full border border-white/25 opacity-40"
+              />
 
-            <Track n="01" title="去哪唱">
-              <label className="block space-y-1">
-                <span className="text-sm font-medium text-white">KTV 品牌</span>
-                <select
-                  name="brandId"
-                  value={brandId}
-                  onChange={(e) => pickBrand(e.target.value)}
-                  className={field}
-                >
-                  {brands.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm font-medium text-white">城市</span>
-                <select
-                  aria-label="城市"
-                  value={city}
-                  onChange={(e) => pickCity(e.target.value)}
-                  className={field}
-                >
-                  {citiesForBrand.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm font-medium text-white">分店</span>
-                <select
-                  name="venueId"
-                  required
-                  value={filtered.some((v) => v.id === venueId) ? venueId : filtered[0]?.id || ""}
-                  onChange={(e) => setVenueId(e.target.value)}
-                  className={field}
-                >
-                  {filtered.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      {venueOptionLabel(v)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </Track>
-
-            <Track n="02" title="何時唱">
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block space-y-1">
-                  <span className="text-sm font-medium text-white">日期</span>
-                  <input
-                    name="date"
-                    type="date"
-                    required
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className={field}
-                  />
-                </label>
-                <label className="block space-y-1">
-                  <span className="text-sm font-medium text-white">開唱時間</span>
-                  <input
-                    name="time"
-                    type="time"
-                    required
-                    value={time}
-                    onChange={(e) => setTime(e.target.value)}
-                    className={field}
-                  />
-                </label>
-              </div>
-              <label className="block space-y-1">
-                <span className="text-sm font-medium text-white">預計唱多久</span>
-                <select
-                  name="duration"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className={field}
-                >
-                  {DURATION_OPTIONS.map((d) => (
-                    <option key={d.value} value={d.value}>
-                      {d.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </Track>
-
-            <Track n="03" title="怎麼唱">
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium text-white">音樂類型</legend>
-                <div className="flex flex-wrap gap-2">
-                  {MUSIC_GENRES.map((g) => {
-                    const on = genres.includes(g);
-                    return (
-                      <label
-                        key={g}
-                        className={`inline-flex h-10 items-center gap-2 rounded-full px-3 text-sm ${
-                          on ? "bg-white text-[#1a1040]" : "border border-white/45 text-white"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          name="genres"
-                          value={g}
-                          checked={on}
-                          onChange={() => {
-                            setFormError("");
-                            setGenres((cur) => (cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g]));
-                          }}
-                          className="h-4 w-4 min-h-0"
-                          style={{ minHeight: 0 }}
-                        />
-                        {g}
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
-              <fieldset className="space-y-2">
-                <legend className="text-sm font-medium text-white">唱歌習慣（選填）</legend>
-                <div className="flex flex-wrap gap-2">
-                  {PREFERENCE_OPTIONS.map((p) => {
-                    const on = prefs.includes(p.id);
-                    return (
-                      <label
-                        key={p.id}
-                        className={`inline-flex h-10 items-center gap-2 rounded-full px-3 text-sm ${
-                          on ? "bg-white text-[#1a1040]" : "border border-white/45 text-white"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          name="preferences"
-                          value={p.id}
-                          checked={on}
-                          onChange={() =>
-                            setPrefs((cur) =>
-                              cur.includes(p.id) ? cur.filter((x) => x !== p.id) : [...cur, p.id],
-                            )
-                          }
-                          className="h-4 w-4 min-h-0"
-                          style={{ minHeight: 0 }}
-                        />
-                        {p.emoji} {p.label}
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
-              <label className="block space-y-1">
-                <span className="text-sm font-medium text-white">預估兩人總費用（選填）</span>
-                <input
-                  name="cost"
-                  type="number"
-                  min={0}
-                  value={cost}
-                  onChange={(e) => setCost(e.target.value)}
-                  className={field}
-                  placeholder="例如 900"
-                />
-                {split != null && Number.isFinite(split) ? (
-                  <p className="text-sm text-white/90">
-                    兩人分攤預估 {formatTwd(split)} / 人
-                    <span className="mt-1 block text-xs text-white/70">
-                      僅供參考，實際價格依 KTV 現場與官方公告為準。
+              <div className="relative mb-7 flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/45 bg-white/15 text-white"
+                      aria-hidden
+                    >
+                      <Mic2 size={18} />
                     </span>
-                  </p>
-                ) : null}
-              </label>
-              <label className="block space-y-1">
-                <span className="text-sm font-medium text-white">額外需求（最多 200 字）</span>
-                <textarea
-                  name="note"
-                  maxLength={200}
-                  rows={4}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder="例如：想唱周杰倫，找同齡一起分攤"
-                  className="w-full rounded-2xl border border-black/15 bg-white p-4 text-[#1a1040] placeholder:text-[#6b6280]"
-                />
-              </label>
-            </Track>
+                    <div>
+                      <h1
+                        className="text-white"
+                        style={{
+                          fontFamily: "Anton, sans-serif",
+                          fontSize: "clamp(34px, 5.5vw, 52px)",
+                          letterSpacing: "-0.03em",
+                          lineHeight: 0.95,
+                        }}
+                      >
+                        排一場
+                        <br />
+                        剛剛好
+                      </h1>
+                      <p className="mt-2 max-w-md text-sm leading-relaxed text-white/88">
+                        每一筆需求最多只能成功媒合 1 位 +1。預覽卡會跟著你填的內容變，填完就可以發布。
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <ol className="flex shrink-0 items-center gap-2 self-start sm:pt-1" aria-hidden>
+                  {[
+                    { n: 1, label: "去哪唱" },
+                    { n: 2, label: "何時唱" },
+                    { n: 3, label: "怎麼唱" },
+                  ].map((step, i) => (
+                    <li key={step.n} className="flex items-center gap-2">
+                      {i > 0 ? <span className="h-px w-4 bg-white/45 sm:w-6" /> : null}
+                      <div className="flex flex-col items-center gap-1">
+                        <span
+                          className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                            i === 0
+                              ? "bg-white text-[#1a1040]"
+                              : "border border-white/70 text-white"
+                          }`}
+                        >
+                          {step.n}
+                        </span>
+                        <span className="hidden text-[10px] tracking-wide text-white/75 sm:block">
+                          {step.label}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
 
-            {formError || state.error ? (
-              <p className="rounded-2xl bg-black/35 px-4 py-3 text-sm font-medium text-amber-100" role="alert">
-                {formError || state.error}
-              </p>
-            ) : null}
-            <button
-              type="submit"
-              disabled={pending}
-              className="flex min-h-12 w-full max-w-xs items-center justify-center border border-white text-sm font-semibold tracking-[0.18em] text-white transition-colors hover:bg-white hover:text-[#1a1040] disabled:opacity-60"
-            >
-              {pending ? "發布中…" : "發布這場歌局"}
-            </button>
+              <div className="relative space-y-7">
+                <Track n="01" title="去哪唱" accent={accent}>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <IconField icon={<Mic2 size={16} />} label="KTV 品牌">
+                      <select
+                        name="brandId"
+                        value={brandId}
+                        onChange={(e) => pickBrand(e.target.value)}
+                        className={field}
+                      >
+                        {brands.map((b) => (
+                          <option key={b.id} value={b.id}>
+                            {b.name}
+                          </option>
+                        ))}
+                      </select>
+                    </IconField>
+                    <IconField icon={<MapPin size={16} />} label="城市">
+                      <select
+                        aria-label="城市"
+                        value={city}
+                        onChange={(e) => pickCity(e.target.value)}
+                        className={field}
+                      >
+                        {citiesForBrand.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                    </IconField>
+                    <IconField icon={<Building2 size={16} />} label="分店">
+                      <select
+                        name="venueId"
+                        required
+                        value={filtered.some((v) => v.id === venueId) ? venueId : filtered[0]?.id || ""}
+                        onChange={(e) => setVenueId(e.target.value)}
+                        className={field}
+                      >
+                        {filtered.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {venueOptionLabel(v)}
+                          </option>
+                        ))}
+                      </select>
+                    </IconField>
+                  </div>
+                </Track>
+
+                <Track n="02" title="何時唱" accent={accent}>
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <IconField icon={<CalendarDays size={16} />} label="日期">
+                      <input
+                        name="date"
+                        type="date"
+                        required
+                        value={date}
+                        onChange={(e) => setDate(e.target.value)}
+                        className={field}
+                      />
+                    </IconField>
+                    <IconField icon={<Clock3 size={16} />} label="開唱時間">
+                      <input
+                        name="time"
+                        type="time"
+                        required
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        className={field}
+                      />
+                    </IconField>
+                    <IconField icon={<Music2 size={16} />} label="預計唱多久">
+                      <select
+                        name="duration"
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value)}
+                        className={field}
+                      >
+                        {DURATION_OPTIONS.map((d) => (
+                          <option key={d.value} value={d.value}>
+                            {d.label}
+                          </option>
+                        ))}
+                      </select>
+                    </IconField>
+                  </div>
+                </Track>
+
+                <Track n="03" title="怎麼唱" accent={accent}>
+                  <fieldset className="space-y-2">
+                    <legend className="text-sm font-medium text-white">音樂類型 · 可複選</legend>
+                    <div className="flex flex-wrap gap-2">
+                      {MUSIC_GENRES.map((g) => {
+                        const on = genres.includes(g);
+                        return (
+                          <label
+                            key={g}
+                            className={`compose-glass-chip inline-flex h-10 cursor-pointer items-center gap-2 rounded-full px-3.5 text-sm ${
+                              on ? "is-on" : "text-white"
+                            }`}
+                            style={
+                              on
+                                ? {
+                                    background: `linear-gradient(135deg, ${accentSoft}, ${accent})`,
+                                    boxShadow: `0 8px 20px ${accent}55`,
+                                  }
+                                : undefined
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              name="genres"
+                              value={g}
+                              checked={on}
+                              onChange={() => {
+                                setFormError("");
+                                setGenres((cur) =>
+                                  cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g],
+                                );
+                              }}
+                              className="sr-only"
+                            />
+                            {g}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                  <fieldset className="space-y-2">
+                    <legend className="text-sm font-medium text-white">唱歌習慣（選填）</legend>
+                    <div className="flex flex-wrap gap-2">
+                      {PREFERENCE_OPTIONS.map((p) => {
+                        const on = prefs.includes(p.id);
+                        return (
+                          <label
+                            key={p.id}
+                            className={`compose-glass-chip inline-flex h-10 cursor-pointer items-center gap-2 rounded-full px-3.5 text-sm ${
+                              on ? "is-on" : "text-white"
+                            }`}
+                            style={
+                              on
+                                ? {
+                                    background: `linear-gradient(135deg, ${hero.ctaTo}, ${accent})`,
+                                    boxShadow: `0 8px 20px ${accent}55`,
+                                  }
+                                : undefined
+                            }
+                          >
+                            <input
+                              type="checkbox"
+                              name="preferences"
+                              value={p.id}
+                              checked={on}
+                              onChange={() =>
+                                setPrefs((cur) =>
+                                  cur.includes(p.id)
+                                    ? cur.filter((x) => x !== p.id)
+                                    : [...cur, p.id],
+                                )
+                              }
+                              className="sr-only"
+                            />
+                            {p.emoji} {p.label}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <IconField icon={<Wallet size={16} />} label="預估兩人總費用（選填）">
+                      <input
+                        name="cost"
+                        type="number"
+                        min={0}
+                        value={cost}
+                        onChange={(e) => setCost(e.target.value)}
+                        className={field}
+                        placeholder="例如 900"
+                      />
+                      {split != null && Number.isFinite(split) ? (
+                        <p className="mt-1.5 text-sm text-white/90">
+                          兩人分攤預估 {formatTwd(split)} / 人
+                          <span className="mt-1 block text-xs text-white/70">
+                            僅供參考，實際價格依 KTV 現場與官方公告為準。
+                          </span>
+                        </p>
+                      ) : null}
+                    </IconField>
+                    <IconField icon={<MessageCircle size={16} />} label="額外需求（最多 200 字）">
+                      <textarea
+                        name="note"
+                        maxLength={200}
+                        rows={3}
+                        value={note}
+                        onChange={(e) => setNote(e.target.value)}
+                        placeholder="例如：想唱周杰倫，找同齡一起分攤"
+                        className="compose-glass-field w-full rounded-2xl border-0 p-4 text-[#1a1040] outline-none placeholder:text-[#6b6280] focus:ring-2 focus:ring-white/70"
+                      />
+                    </IconField>
+                  </div>
+                </Track>
+              </div>
+
+              {formError || state.error ? (
+                <p
+                  className="relative mt-6 rounded-2xl bg-black/35 px-4 py-3 text-sm font-medium text-amber-100"
+                  role="alert"
+                >
+                  {formError || state.error}
+                </p>
+              ) : null}
+
+              <div className="relative mt-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold tracking-[0.12em] text-white transition-transform hover:scale-[1.01] disabled:opacity-60 sm:max-w-md"
+                  style={{
+                    background: ctaGradient,
+                    boxShadow: `0 14px 36px ${accent}66`,
+                  }}
+                >
+                  <Send size={16} />
+                  {pending ? "發布中…" : "發布這場歌局"}
+                  <ArrowRight size={16} />
+                </button>
+                <p className="flex items-center gap-2 text-xs leading-relaxed text-white/80 sm:max-w-[220px]">
+                  <Lock size={14} className="shrink-0 opacity-80" />
+                  聯絡方式要媒合成功才會交換，公開資料不會外流。
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </form>
@@ -443,16 +551,54 @@ export function RequestForm({
   );
 }
 
-function Track({ n, title, children }: { n: string; title: string; children: ReactNode }) {
+function Track({
+  n,
+  title,
+  accent,
+  children,
+}: {
+  n: string;
+  title: string;
+  accent: string;
+  children: ReactNode;
+}) {
   return (
     <section className="border-t border-white/25 pt-5">
-      <p
-        className="mb-3 text-white/55"
-        style={{ fontFamily: "Anton, sans-serif", fontSize: 28, letterSpacing: "0.06em", lineHeight: 1 }}
-      >
-        {n} <span className="ml-2 text-base font-semibold tracking-wide text-white">{title}</span>
-      </p>
+      <div className="mb-4 flex items-center gap-3">
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white"
+          style={{
+            background: `linear-gradient(145deg, ${accent}cc, ${accent})`,
+            boxShadow: `0 8px 18px ${accent}44`,
+          }}
+        >
+          {n}
+        </span>
+        <p className="text-base font-semibold tracking-wide text-white">{title}</p>
+      </div>
       <div className="space-y-4">{children}</div>
     </section>
+  );
+}
+
+function IconField({
+  icon,
+  label,
+  children,
+}: {
+  icon: ReactNode;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="block min-w-0 space-y-1.5">
+      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-white">
+        <span className="text-white/75" aria-hidden>
+          {icon}
+        </span>
+        {label}
+      </span>
+      {children}
+    </label>
   );
 }

@@ -167,6 +167,38 @@ textarea {
   animation-delay: 80ms;
 }
 
+.compose-glass {
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(22px) saturate(1.2);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2);
+  border: 1.5px solid rgba(255, 255, 255, 0.42);
+  box-shadow:
+    0 28px 64px rgba(0, 0, 0, 0.16),
+    inset 0 1px 1px rgba(255, 255, 255, 0.55);
+}
+
+.compose-glass-field {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+.compose-glass-chip {
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.compose-glass-chip:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.compose-glass-chip.is-on {
+  border-color: transparent;
+  color: #fff;
+}
+
 @keyframes compose-in-left {
   from { opacity: 0; transform: translateX(-32px) scale(0.96); }
   to { opacity: 1; transform: translateX(0) scale(1); }
