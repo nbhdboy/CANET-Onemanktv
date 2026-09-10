@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { StageDisc, StagePage, StageTitle, StageTrack, ghostBtn } from "@/components/layout/StagePage";
 import { Stars } from "@/components/ui/Stars";
-import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
 import { heroByAge, POSITIVE_REVIEW_TAGS, type HeroAge } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
 import type { ReviewRecord } from "@/lib/types";
@@ -37,6 +37,7 @@ export function PublicProfileBoard({
 }) {
   const preset = avatarPresetOrFallback(avatarUrl);
   const photo = isPhotoAvatar(avatarUrl) ? avatarUrl : null;
+  const discImage = photo || avatarPresetSrc(avatarUrl);
   const displayName = nickname || "歌友";
   const isNew = ratingCount === 0;
   const hero = heroByAge(ageBand);
@@ -59,7 +60,8 @@ export function PublicProfileBoard({
           to={hero.ctaTo}
           glow={hero.glassGlow}
           glowSoft={hero.glassGlowSoft}
-          imageUrl={photo}
+          imageUrl={discImage}
+          imageFit="cover"
         />
       }
     >

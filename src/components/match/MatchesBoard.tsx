@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
-import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
 
@@ -35,6 +35,7 @@ export function MatchesBoard({
   const hero = heroByAge(ageBand);
   const preset = avatarPresetOrFallback(avatarUrl);
   const photo = isPhotoAvatar(avatarUrl) ? avatarUrl : null;
+  const face = photo || avatarPresetSrc(avatarUrl);
   const live = pendingRequests.length + waitingReply.length + waitingPay.length + matched.length;
   const badge =
     waitingPay.length > 0
@@ -102,16 +103,16 @@ export function MatchesBoard({
                   className="relative flex h-full flex-col overflow-hidden text-white"
                   style={{
                     borderRadius: 36,
-                    background: photo
+                    background: face
                       ? "#12081f"
                       : `linear-gradient(165deg, ${preset.from} 0%, ${preset.to} 58%, #1a1040 100%)`,
                     boxShadow: "0 28px 70px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.12)",
                   }}
                 >
-                  {photo ? (
+                  {face ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={photo}
+                      src={face}
                       alt=""
                       className="absolute inset-0 h-full w-full object-cover opacity-55"
                     />

@@ -7,7 +7,7 @@ import { CancelRequestButton } from "@/components/requests/CancelRequestButton";
 import { SafetyActions } from "@/components/safety/SafetyActions";
 import { Stars } from "@/components/ui/Stars";
 import { PREFERENCE_OPTIONS, heroByAge } from "@/lib/constants";
-import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
 import { durationLabel, formatTwd } from "@/lib/format";
 import { formatClock, formatDateTime, relativeFromNow } from "@/lib/time";
 import type { RequestCardData, ReviewRecord } from "@/lib/types";
@@ -30,6 +30,7 @@ export function RequestStage({
   const hero = heroByAge(item.age_band);
   const preset = avatarPresetOrFallback(item.initiator.avatar_url);
   const photo = isPhotoAvatar(item.initiator.avatar_url) ? item.initiator.avatar_url : null;
+  const discImage = photo || avatarPresetSrc(item.initiator.avatar_url);
   const note = item.note?.replace(/^「|」$/g, "").trim();
   const split =
     item.estimated_total_cost_2p != null
@@ -101,7 +102,7 @@ export function RequestStage({
               from={preset.from}
               to={preset.to}
               emoji={preset.emoji}
-              imageUrl={photo}
+              imageUrl={discImage}
               kicker="K歌 +1"
               title={item.initiator.nickname}
               sub={`${item.age_band ?? hero.age} 歲場`}

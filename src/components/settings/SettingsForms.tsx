@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { updateContactsAction, updatePublicProfileAction } from "@/actions/profile";
+import { DEFAULT_AVATAR_PRESET_ID } from "@/lib/constants";
 import { AvatarPicker } from "@/components/ui/AvatarPicker";
 import { GlassPanel, glassCtaStyle, glassFieldClass } from "@/components/layout/GlassFormShell";
 import { StageTrack } from "@/components/layout/StagePage";
@@ -30,7 +31,7 @@ export function SettingsForms({
 }) {
   const [p, pAction, pPending] = useActionState(updatePublicProfileAction, init);
   const [c, cAction, cPending] = useActionState(updateContactsAction, init);
-  const [avatarValue, setAvatarValue] = useState(avatar || "mic-purple");
+  const [avatarValue, setAvatarValue] = useState(avatar || DEFAULT_AVATAR_PRESET_ID);
   const [line, setLine] = useState(lineId);
   const [ig, setIg] = useState(instagram);
   const [th, setTh] = useState(threads);
@@ -43,7 +44,7 @@ export function SettingsForms({
   }, [lineId, instagram, threads]);
 
   useEffect(() => {
-    setAvatarValue(avatar || "mic-purple");
+    setAvatarValue(avatar || DEFAULT_AVATAR_PRESET_ID);
   }, [avatar]);
 
   return (

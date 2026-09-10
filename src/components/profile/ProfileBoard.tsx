@@ -7,7 +7,7 @@ import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
 import { LogoutButton } from "@/components/profile/LogoutButton";
 import { StageDisc } from "@/components/layout/StageDisc";
 import { heroByAge, type HeroAge } from "@/lib/constants";
-import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
 import { Stars } from "@/components/ui/Stars";
 import type { ReactNode } from "react";
 
@@ -43,6 +43,7 @@ export function ProfileBoard({
   const hero = heroByAge(ageBand);
   const preset = avatarPresetOrFallback(avatarUrl);
   const photo = isPhotoAvatar(avatarUrl) ? avatarUrl : null;
+  const discImage = photo || avatarPresetSrc(avatarUrl);
   const displayName = nickname || "尚未設定暱稱";
 
   return (
@@ -89,7 +90,7 @@ export function ProfileBoard({
               to={hero.ctaTo}
               glow={hero.glassGlow}
               glowSoft={hero.glassGlowSoft}
-              imageUrl={photo}
+              imageUrl={discImage}
               imageFit="cover"
             />
 

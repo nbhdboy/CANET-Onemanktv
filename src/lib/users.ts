@@ -55,7 +55,7 @@ function insertLocalAccount(id: string, email: string, passwordHash: string, adm
         age_verified, account_verified, terms_agreed, profile_completed,
         successful_match_count, free_match_used, rating_avg, rating_count,
         status, is_admin, created_at, updated_at
-      ) VALUES (?, NULL, 'mic-purple', NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 0, 'ACTIVE', ?, ?, ?)`,
+      ) VALUES (?, NULL, 'age20-f', NULL, NULL, 0, 0, 0, 0, 0, 0, NULL, 0, 'ACTIVE', ?, ?, ?)`,
     ).run(id, isAdmin, now, now);
     db.prepare(
       `INSERT INTO user_private_contacts (

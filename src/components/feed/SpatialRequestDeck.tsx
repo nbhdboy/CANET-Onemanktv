@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { AVATAR_PRESETS } from "@/lib/constants";
-import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
 import { formatDateTime, hoursUntil } from "@/lib/time";
 import type { RequestCardData } from "@/lib/types";
 
@@ -182,7 +182,7 @@ export function SpatialRequestDeck({
                 height={cardH}
                 from={preset.from}
                 to={preset.to}
-                emoji={preset.emoji}
+                imageSrc={preset.src}
                 delay={i * 0.45}
               />
             );
@@ -282,6 +282,7 @@ function DeckCard({
 }) {
   const preset = avatarPresetOrFallback(item.initiator.avatar_url);
   const photo = isPhotoAvatar(item.initiator.avatar_url) ? item.initiator.avatar_url : null;
+  const face = photo || avatarPresetSrc(item.initiator.avatar_url);
   const soon = hoursUntil(item.sing_at) > 0 && hoursUntil(item.sing_at) <= 3;
   const note = item.note?.replace(/^「|」$/g, "").trim();
 
@@ -311,7 +312,7 @@ function DeckCard({
           className="relative h-full w-full overflow-hidden text-white"
           style={{
             borderRadius: 36,
-            background: photo
+            background: face
               ? "#12081f"
               : `linear-gradient(165deg, ${preset.from} 0%, ${preset.to} 58%, #1a1040 100%)`,
             boxShadow: active
@@ -322,9 +323,9 @@ function DeckCard({
             transition: `filter ${MOVE_MS}ms ${EASE}, box-shadow ${MOVE_MS}ms ${EASE}, opacity ${MOVE_MS}ms ${EASE}`,
           }}
         >
-          {photo ? (
+          {face ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={face} alt="" className="absolute inset-0 h-full w-full object-cover" />
           ) : (
             <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
               <span
@@ -402,7 +403,7 @@ function FillerCard({
   height,
   from,
   to,
-  emoji,
+  imageSrc,
   delay,
 }: {
   pose: Pose;
@@ -410,7 +411,7 @@ function FillerCard({
   height: number;
   from: string;
   to: string;
-  emoji: string;
+  imageSrc: string;
   delay: number;
 }) {
   return (
@@ -429,7 +430,7 @@ function FillerCard({
     >
       <div className="deck-float" style={{ height: "100%", animationDelay: `${delay}s` }}>
         <div
-          className="h-full w-full overflow-hidden"
+          className="relative h-full w-full overflow-hidden"
           style={{
             borderRadius: 36,
             background: `linear-gradient(165deg, ${from} 0%, ${to} 70%, #1a1040 100%)`,
@@ -438,9 +439,8 @@ function FillerCard({
             boxShadow: "0 10px 28px rgba(0,0,0,0.18)",
           }}
         >
-          <div className="flex h-full items-center justify-center text-white/80" style={{ fontSize: 54 }}>
-            {emoji}
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={imageSrc} alt="" className="absolute inset-0 h-full w-full object-cover" />
         </div>
       </div>
     </div>

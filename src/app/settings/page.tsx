@@ -6,9 +6,10 @@ import { SettingsForms } from "@/components/settings/SettingsForms";
 import { SavedCardSettings } from "@/components/settings/SavedCardSettings";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
 import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
-import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
 import {
   HERO_AGE_COOKIE,
+  DEFAULT_AVATAR_PRESET_ID,
   ageBandFromYears,
   heroByAge,
   parseHeroAge,
@@ -44,6 +45,7 @@ export default async function SettingsPage({
   const hero = heroByAge(ageBand);
   const preset = avatarPresetOrFallback(profile?.avatar_url);
   const photo = isPhotoAvatar(profile?.avatar_url) ? profile?.avatar_url : null;
+  const discImage = photo || avatarPresetSrc(profile?.avatar_url);
 
   return (
     <StagePage
@@ -61,7 +63,8 @@ export default async function SettingsPage({
           to={hero.ctaTo}
           glow={hero.glassGlow}
           glowSoft={hero.glassGlowSoft}
-          imageUrl={photo}
+          imageUrl={discImage}
+          imageFit="cover"
         />
       }
     >
@@ -77,7 +80,7 @@ export default async function SettingsPage({
       </div>
       <SettingsForms
         nickname={profile?.nickname || ""}
-        avatar={profile?.avatar_url || "mic-purple"}
+        avatar={profile?.avatar_url || DEFAULT_AVATAR_PRESET_ID}
         lineId={contacts?.line_id || ""}
         instagram={contacts?.instagram_handle || ""}
         threads={contacts?.threads_handle || ""}

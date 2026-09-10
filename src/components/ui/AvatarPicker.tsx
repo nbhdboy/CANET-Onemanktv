@@ -119,25 +119,33 @@ export function AvatarPicker({
         <Avatar presetId={value} nickname="預覽" size={72} />
         <div className="space-y-1">
           <p className={labelCls}>頭像</p>
-          <p className={helpCls}>可選貼圖，或上傳照片（會裁成正方形並壓縮）</p>
+          <p className={helpCls}>可選各年齡代 3D 人像，或上傳照片（會裁成正方形並壓縮）</p>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {AVATAR_PRESETS.map((a) => (
-          <button
-            key={a.id}
-            type="button"
-            onClick={() => onChange(a.id)}
-            className={`h-12 w-12 rounded-full text-xl ${
-              value === a.id && !isPhotoAvatar(value) ? "ring-2 ring-purple-700 ring-offset-2" : ""
-            }`}
-            style={{ background: `linear-gradient(135deg, ${a.from}, ${a.to})` }}
-            aria-label={a.id}
-          >
-            {a.emoji}
-          </button>
-        ))}
+      <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
+        {AVATAR_PRESETS.map((a) => {
+          const selected = value === a.id && !isPhotoAvatar(value);
+          return (
+            <button
+              key={a.id}
+              type="button"
+              onClick={() => onChange(a.id)}
+              className={`relative aspect-square overflow-hidden rounded-full bg-black ${
+                selected
+                  ? tone === "onDark"
+                    ? "ring-2 ring-white ring-offset-2 ring-offset-transparent"
+                    : "ring-2 ring-purple-700 ring-offset-2"
+                  : "ring-1 ring-white/25"
+              }`}
+              aria-label={a.label}
+              title={a.label}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={a.src} alt="" className="h-full w-full object-cover" />
+            </button>
+          );
+        })}
       </div>
 
       <label className={tone === "onDark" ? `${helpCls} inline-flex cursor-pointer` : "inline-flex cursor-pointer"}>

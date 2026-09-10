@@ -5,7 +5,8 @@ import Link from "next/link";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
 import { ApplicantActions } from "@/components/match/ApplicantActions";
 import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
-import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { Avatar } from "@/components/ui/Avatar";
+import { avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
 import { durationLabel } from "@/lib/format";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
@@ -31,6 +32,7 @@ export function ApplicantsBoard({
   const photo = isPhotoAvatar(request.initiator.avatar_url)
     ? request.initiator.avatar_url
     : null;
+  const discImage = photo || avatarPresetSrc(request.initiator.avatar_url);
   const canDecide = request.status === "OPEN";
   const hero = heroByAge(ageBand);
 
@@ -62,7 +64,7 @@ export function ApplicantsBoard({
           to={hero.ctaTo}
           glow={hero.glassGlow}
           glowSoft={hero.glassGlowSoft}
-          imageUrl={photo}
+          imageUrl={discImage}
         />
       }
     >
@@ -133,8 +135,6 @@ function ApplicantCard({
   applicationId: string;
   onLoadingChange: (loading: boolean) => void;
 }) {
-  const preset = avatarPresetOrFallback(profile.avatar_url);
-  const photo = isPhotoAvatar(profile.avatar_url) ? profile.avatar_url : null;
   const rating =
     profile.rating_count === 0
       ? "🌱 新歌友"
@@ -143,23 +143,7 @@ function ApplicantCard({
   return (
     <article className="border border-white/50 px-5 py-5 text-white">
       <div className="flex items-start gap-4">
-        <div
-          className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl"
-          style={{
-            background: photo
-              ? undefined
-              : `linear-gradient(165deg, ${preset.from}, ${preset.to})`,
-            boxShadow: "0 0 0 1px rgba(255,255,255,0.2)",
-          }}
-          aria-hidden
-        >
-          {photo ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={photo} alt="" className="h-full w-full object-cover" />
-          ) : (
-            preset.emoji
-          )}
-        </div>
+        <Avatar presetId={profile.avatar_url} nickname={profile.nickname} size={56} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <Link href={`/u/${profile.id}`} className="text-lg font-bold hover:underline">

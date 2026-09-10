@@ -25,7 +25,7 @@ import {
   type HeroAge,
 } from "@/lib/constants";
 import { preferredCity, sortCities, venueOptionLabel, venuesMatching } from "@/lib/ktv-venues";
-import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
 import { durationLabel, formatTwd } from "@/lib/format";
 import type { ActionResult, KtvBrand, KtvVenue } from "@/lib/types";
 
@@ -62,6 +62,7 @@ export function RequestForm({
   const hero = heroByAge(ageBand);
   const preset = avatarPresetOrFallback(avatarUrl);
   const photo = isPhotoAvatar(avatarUrl) ? avatarUrl : null;
+  const discImage = photo || avatarPresetSrc(avatarUrl);
   const [brandId, setBrandId] = useState(brands[0]?.id || "");
   const [city, setCity] = useState(() =>
     preferredCity(
@@ -193,16 +194,16 @@ export function RequestForm({
                   className="relative h-full overflow-hidden text-white"
                   style={{
                     borderRadius: 36,
-                    background: photo
+                    background: discImage
                       ? "#12081f"
                       : `linear-gradient(165deg, ${preset.from} 0%, ${preset.to} 58%, #1a1040 100%)`,
                     boxShadow: "0 28px 70px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.12)",
                   }}
                 >
-                  {photo ? (
+                  {discImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={photo}
+                      src={discImage}
                       alt=""
                       className="absolute inset-0 h-full w-full object-cover"
                     />
@@ -210,7 +211,7 @@ export function RequestForm({
                   <p className="absolute left-4 top-4 z-10 rounded-full border border-white/40 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] text-white/90">
                     {date && time ? "即將上架" : "草稿"}
                   </p>
-                  {!photo ? (
+                  {!discImage ? (
                     <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
                       <span className="text-7xl">{preset.emoji}</span>
                     </div>

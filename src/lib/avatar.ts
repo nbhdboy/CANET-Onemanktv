@@ -1,4 +1,4 @@
-import { AVATAR_PRESETS } from "@/lib/constants";
+import { AVATAR_PRESETS, DEFAULT_AVATAR_PRESET_ID } from "@/lib/constants";
 
 export function isPhotoAvatar(value?: string | null) {
   if (!value) return false;
@@ -11,6 +11,14 @@ export function avatarPresetOrFallback(id?: string | null) {
   }
   return AVATAR_PRESETS[0];
 }
+
+/** 預設頭像圖（非照片）；舊 emoji id 會落到第一組。 */
+export function avatarPresetSrc(id?: string | null) {
+  if (isPhotoAvatar(id)) return null;
+  return avatarPresetOrFallback(id).src;
+}
+
+export { DEFAULT_AVATAR_PRESET_ID };
 
 export function isManagedAvatarUrl(url: string) {
   if (url.startsWith("/uploads/avatars/")) return true;

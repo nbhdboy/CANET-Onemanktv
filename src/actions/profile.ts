@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/session";
 import { completeOnboardingApp, loadContacts, loadProfile, saveContactsApp, updatePublicProfileApp } from "@/lib/app-data";
-import { AVATAR_PRESETS } from "@/lib/constants";
+import { AVATAR_PRESETS, DEFAULT_AVATAR_PRESET_ID } from "@/lib/constants";
 import { gateError } from "@/lib/format";
 import type { ActionResult } from "@/lib/types";
 
@@ -58,7 +58,7 @@ export async function updatePublicProfileAction(_: ActionResult, formData: FormD
     const session = await requireSession();
     await updatePublicProfileApp(session.id, {
       nickname: String(formData.get("nickname") || ""),
-      avatar_url: String(formData.get("avatar") || "mic-purple"),
+      avatar_url: String(formData.get("avatar") || DEFAULT_AVATAR_PRESET_ID),
     });
     revalidatePath("/profile");
     revalidatePath("/settings");

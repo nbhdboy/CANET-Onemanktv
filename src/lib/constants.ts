@@ -62,13 +62,90 @@ export const REPORT_REASONS = [
 ] as const;
 
 export const AVATAR_PRESETS = [
-  { id: "mic-purple", emoji: "🎤", from: "#7C3AED", to: "#EC4899" },
-  { id: "notes-cyan", emoji: "🎵", from: "#06B6D4", to: "#7C3AED" },
-  { id: "disco-pink", emoji: "🪩", from: "#E882B4", to: "#F4845F" },
-  { id: "star-yellow", emoji: "⭐", from: "#F5C542", to: "#F4845F" },
-  { id: "fire-coral", emoji: "🔥", from: "#F4845F", to: "#E11D48" },
-  { id: "spark-blue", emoji: "✨", from: "#6EB5FF", to: "#7C3AED" },
+  {
+    id: "age20-f",
+    label: "20 歲 · 女",
+    age: 20,
+    gender: "f",
+    src: "/avatars/presets/age-20-f.png?v=1",
+    emoji: "🎤",
+    from: "#F4845F",
+    to: "#FFB090",
+  },
+  {
+    id: "age20-m",
+    label: "20 歲 · 男",
+    age: 20,
+    gender: "m",
+    src: "/avatars/presets/age-20-m.png?v=1",
+    emoji: "🎤",
+    from: "#E56A3D",
+    to: "#F4845F",
+  },
+  {
+    id: "age30-f",
+    label: "30 歲 · 女",
+    age: 30,
+    gender: "f",
+    src: "/avatars/presets/age-30-f.png?v=1",
+    emoji: "🎵",
+    from: "#6EB5FF",
+    to: "#A8D4FF",
+  },
+  {
+    id: "age30-m",
+    label: "30 歲 · 男",
+    age: 30,
+    gender: "m",
+    src: "/avatars/presets/age-30-m.png?v=1",
+    emoji: "🎵",
+    from: "#3D8FE8",
+    to: "#6EB5FF",
+  },
+  {
+    id: "age40-f",
+    label: "40 歲 · 女",
+    age: 40,
+    gender: "f",
+    src: "/avatars/presets/age-40-f.png?v=1",
+    emoji: "✨",
+    from: "#6BBF7A",
+    to: "#A5E0B0",
+  },
+  {
+    id: "age40-m",
+    label: "40 歲 · 男",
+    age: 40,
+    gender: "m",
+    src: "/avatars/presets/age-40-m.png?v=1",
+    emoji: "✨",
+    from: "#3F9A52",
+    to: "#6BBF7A",
+  },
+  {
+    id: "age50-f",
+    label: "50 歲 · 女",
+    age: 50,
+    gender: "f",
+    src: "/avatars/presets/age-50-f.png?v=1",
+    emoji: "⭐",
+    from: "#E882B4",
+    to: "#F5B8D6",
+  },
+  {
+    id: "age50-m",
+    label: "50 歲 · 男",
+    age: 50,
+    gender: "m",
+    src: "/avatars/presets/age-50-m.png?v=1",
+    emoji: "⭐",
+    from: "#D45A9A",
+    to: "#E882B4",
+  },
 ] as const;
+
+export type AvatarPresetId = (typeof AVATAR_PRESETS)[number]["id"];
+export const DEFAULT_AVATAR_PRESET_ID: AvatarPresetId = AVATAR_PRESETS[0].id;
 
 export const HERO_IMAGES = [
   {
