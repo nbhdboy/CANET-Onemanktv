@@ -63,17 +63,19 @@ export function FeedFilters({
     { id: "tomorrow", label: "明天" },
   ];
   const idle = onColor
-    ? "bg-white/20 text-white border border-white/40"
+    ? "bg-white/20 text-white border border-white/35"
     : "bg-white text-foreground";
   const active = onColor
     ? "bg-white text-foreground"
     : "bg-purple-700 text-white";
   const field = onColor
-    ? "rounded-2xl bg-white/90 px-3 h-12 text-foreground"
-    : "rounded-2xl bg-white px-3 h-12";
+    ? "rounded-xl bg-white/90 px-2.5 h-10 text-sm text-foreground"
+    : "rounded-xl bg-white px-2.5 h-10 text-sm";
+  const chipCls =
+    "shrink-0 rounded-full px-3 h-9 text-xs font-medium inline-flex items-center";
   const clearCls = onColor
-    ? "shrink-0 self-end sm:self-auto rounded-full border border-white/80 px-4 h-11 text-sm font-medium text-white transition-colors hover:bg-white hover:text-[#1a1040]"
-    : "shrink-0 self-end sm:self-auto rounded-full border border-black/20 px-4 h-11 text-sm font-medium transition-colors hover:bg-black/5";
+    ? "shrink-0 rounded-full border border-white/70 px-3 h-9 text-xs font-medium text-white transition-colors hover:bg-white hover:text-[#1a1040]"
+    : "shrink-0 rounded-full border border-black/20 px-3 h-9 text-xs font-medium transition-colors hover:bg-black/5";
 
   const hasFilters = Boolean(when || city || brand || venue || posted);
 
@@ -139,17 +141,15 @@ export function FeedFilters({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-        <div className="flex gap-2 overflow-x-auto pb-1">
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5">
           {chips.map((c) => (
             <button
               key={c.id}
               type="button"
               onClick={() => apply({ when: when === c.id ? undefined : c.id })}
-              className={`shrink-0 rounded-full px-4 h-11 text-sm font-medium inline-flex items-center ${
-                when === c.id ? active : idle
-              }`}
+              className={`${chipCls} ${when === c.id ? active : idle}`}
             >
               {c.label}
             </button>
@@ -184,7 +184,7 @@ export function FeedFilters({
           e.preventDefault();
           apply({});
         }}
-        className="grid grid-cols-2 sm:grid-cols-4 gap-2"
+        className="grid grid-cols-2 gap-1.5 sm:grid-cols-4"
       >
         {when ? <input type="hidden" name="when" value={when} /> : null}
         {current.age ? <input type="hidden" name="age" value={current.age} /> : null}
@@ -245,7 +245,7 @@ export function FeedFilters({
         </select>
         <button
           type="submit"
-          className={`col-span-2 sm:col-span-4 h-11 rounded-2xl font-medium ${
+          className={`col-span-2 sm:col-span-4 h-10 rounded-xl text-sm font-medium ${
             onColor ? "bg-white text-foreground" : "bg-white"
           }`}
         >
