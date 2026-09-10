@@ -268,16 +268,8 @@ export function FeedFilters({
           type="submit"
           className={
             glass
-              ? "col-span-2 sm:col-span-4 inline-flex h-11 items-center justify-center rounded-full text-sm font-semibold tracking-[0.12em] text-white transition-transform hover:scale-[1.01]"
+              ? "col-span-2 sm:col-span-4 inline-flex h-11 items-center justify-center rounded-full bg-white text-sm font-semibold tracking-[0.12em] text-[#1a1040] shadow-[0_8px_22px_rgba(0,0,0,0.08)] transition-colors hover:bg-white/95"
               : "col-span-2 sm:col-span-4 h-10 rounded-xl text-sm font-medium bg-white"
-          }
-          style={
-            glass
-              ? {
-                  background: `linear-gradient(110deg, ${chipAccentSoft} 0%, ${chipAccent} 55%, ${chipAccentSoft} 100%)`,
-                  boxShadow: `0 12px 28px ${chipAccent}55`,
-                }
-              : undefined
           }
         >
           套用篩選
