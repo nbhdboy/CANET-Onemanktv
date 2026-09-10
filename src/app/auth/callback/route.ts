@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   const code = searchParams.get("code");
   const next = safeNextPath(searchParams.get("next"));
   const fail = new URL("/login", origin);
-  fail.searchParams.set("error", "google");
+  fail.searchParams.set("error", "oauth");
   if (next !== "/") fail.searchParams.set("next", next);
 
   if (!code) return NextResponse.redirect(fail);
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     const dest = profile?.profile_completed ? next : "/onboarding";
     return NextResponse.redirect(new URL(dest, origin));
   } catch (err) {
-    console.error("google callback", err);
+    console.error("oauth callback", err);
     return NextResponse.redirect(fail);
   }
 }

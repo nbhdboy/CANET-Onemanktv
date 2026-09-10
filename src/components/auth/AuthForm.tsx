@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { loginAction, signupAction } from "@/actions/auth";
-import { GoogleLoginButton } from "@/components/auth/GoogleLoginButton";
+import { OAuthLoginButton } from "@/components/auth/GoogleLoginButton";
 import { glassCtaStyle, glassFieldClass } from "@/components/layout/GlassFormShell";
 import type { ActionResult } from "@/lib/types";
 
@@ -11,6 +11,8 @@ const init: ActionResult = { ok: false };
 
 const CALLBACK_ERRORS: Record<string, string> = {
   google: "Google 登入失敗，請再試一次或改用 Email。",
+  facebook: "Facebook 登入失敗，請再試一次或改用 Email。",
+  oauth: "社群登入失敗，請再試一次或改用 Email。",
   banned: "此帳號已被停權。",
   suspended: "此帳號目前暫停使用。",
 };
@@ -79,7 +81,10 @@ export function AuthForm({
         或
         <span className="h-px flex-1 bg-white/30" />
       </div>
-      <GoogleLoginButton next={next} glass />
+      <div className="space-y-2">
+        <OAuthLoginButton provider="google" next={next} glass />
+        <OAuthLoginButton provider="facebook" next={next} glass />
+      </div>
       <p className="text-center text-sm text-white/80">
         {mode === "login" ? (
           <>
