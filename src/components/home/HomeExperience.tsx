@@ -160,8 +160,9 @@ export function HomeExperience({
                 ageLabel={hero.label}
                 age={hero.age}
                 onColor
-                ctaFrom={hero.bg}
-                ctaTo={hero.panel}
+                ctaFrom={hero.ctaFrom}
+                ctaMid={hero.ctaMid}
+                ctaTo={hero.ctaTo}
               />
             </div>
           ) : (

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Bell, Mic2, Music2, UserRound, Plus } from "lucide-react";
+import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
 
 type UserLite = {
   id: string;
@@ -24,8 +26,24 @@ export function AppChrome({
   children: React.ReactNode;
 }) {
   const pathname = usePathname() || initialPath;
+  const router = useRouter();
+  const [navLoading, setNavLoading] = useState(false);
   const hide = HIDE_NAV.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   const isHome = pathname === "/";
+
+  useEffect(() => {
+    setNavLoading(false);
+  }, [pathname]);
+
+  function goProfile() {
+    if (navLoading || pathname.startsWith("/profile")) return;
+    setNavLoading(true);
+    router.push("/profile");
+  }
+
+  if (navLoading) {
+    return <EqualizerLoader />;
+  }
 
   return (
     <>
@@ -53,21 +71,34 @@ export function AppChrome({
               </Link>
             )}
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex h-10 items-center gap-1">
             {user ? (
               <>
-                <Link href="/notifications" className="relative p-2 rounded-full hover:bg-black/5" aria-label="通知">
+                <Link
+                  href="/notifications"
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-black/5"
+                  aria-label="通知"
+                >
                   <Bell size={20} />
                   {user.unread > 0 && (
-                    <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-pink-500 text-white text-[10px] leading-4 text-center">
+                    <span className="absolute top-1.5 right-1.5 min-w-4 h-4 px-1 rounded-full bg-pink-500 text-white text-[10px] leading-4 text-center">
                       {user.unread}
                     </span>
                   )}
                 </Link>
-                <span className="text-sm text-[var(--muted)]">{user.nickname}</span>
+                <button
+                  type="button"
+                  onClick={goProfile}
+                  className="flex h-10 items-center rounded-full px-3 text-sm text-[var(--muted)] transition-colors hover:bg-black/5 hover:text-foreground"
+                >
+                  {user.nickname}
+                </button>
               </>
             ) : (
-              <Link href="/login" className="text-sm font-semibold text-purple-700">
+              <Link
+                href="/login"
+                className="flex h-10 items-center px-3 text-sm font-semibold text-purple-700"
+              >
                 登入
               </Link>
             )}

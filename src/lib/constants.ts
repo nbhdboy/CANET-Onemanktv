@@ -78,6 +78,9 @@ export const HERO_IMAGES = [
     src: "/heroes/age-20.png?v=3",
     bg: "#F4845F",
     panel: "#F79B7F",
+    ctaFrom: "#E56A3D",
+    ctaMid: "#F4845F",
+    ctaTo: "#FFB090",
   },
   {
     age: 30,
@@ -87,6 +90,9 @@ export const HERO_IMAGES = [
     src: "/heroes/age-30.png?v=4",
     bg: "#6EB5FF",
     panel: "#8DC4FF",
+    ctaFrom: "#3D8FE8",
+    ctaMid: "#6EB5FF",
+    ctaTo: "#A8D4FF",
   },
   {
     age: 40,
@@ -96,6 +102,9 @@ export const HERO_IMAGES = [
     src: "/heroes/age-40.png?v=4",
     bg: "#6BBF7A",
     panel: "#85CC92",
+    ctaFrom: "#3F9A52",
+    ctaMid: "#6BBF7A",
+    ctaTo: "#A5E0B0",
   },
   {
     age: 50,
@@ -105,6 +114,9 @@ export const HERO_IMAGES = [
     src: "/heroes/age-50.png?v=4",
     bg: "#E882B4",
     panel: "#ED9DC4",
+    ctaFrom: "#D45A9A",
+    ctaMid: "#E882B4",
+    ctaTo: "#F5B8D6",
   },
 ] as const;
 
