@@ -1,8 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { logoutAction } from "@/actions/auth";
 import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
 import { LogoutButton } from "@/components/profile/LogoutButton";
+import { useImageAccent } from "@/hooks/useImageAccent";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
 import { Stars } from "@/components/ui/Stars";
@@ -40,6 +43,8 @@ export function ProfileBoard({
   const hero = heroByAge(ageBand);
   const preset = avatarPresetOrFallback(avatarUrl);
   const photo = isPhotoAvatar(avatarUrl) ? avatarUrl : null;
+  const accent = useImageAccent(photo, { from: preset.from, to: preset.to });
+  const glowFrom = photo ? accent.from : preset.from;
   const displayName = nickname || "尚未設定暱稱";
 
   return (
@@ -80,9 +85,9 @@ export function ProfileBoard({
             <div className="relative mx-auto flex h-[400px] max-w-[280px] items-center justify-center">
               <div
                 aria-hidden
-                className="absolute h-[72%] w-[72%] rounded-full"
+                className="absolute h-[72%] w-[72%] rounded-full transition-[background] duration-500"
                 style={{
-                  background: `radial-gradient(circle, ${preset.from} 0%, transparent 70%)`,
+                  background: `radial-gradient(circle, ${glowFrom} 0%, transparent 70%)`,
                 }}
               />
               <div className="deck-float relative">
@@ -97,7 +102,12 @@ export function ProfileBoard({
                 >
                   {photo ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    <img
+                      src={photo}
+                      alt=""
+                      crossOrigin="anonymous"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
                   ) : null}
                   <div
                     className={`relative z-10 flex h-full w-full flex-col items-center justify-center ${
