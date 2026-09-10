@@ -1,5 +1,6 @@
 export const APP_NAME = "K歌 +1";
 export const APP_TAGLINE = "一個人想唱 KTV？找另一個一個人，兩個人剛剛好。";
+export const SUPPORT_EMAIL = "service@canet.tech";
 export const TIMEZONE = "Asia/Taipei";
 export const CURRENCY = "TWD";
 export const SESSION_COOKIE = "kplus1_session";

@@ -4,10 +4,12 @@ import { getSession } from "@/lib/session";
 import { loadProfile } from "@/lib/app-data";
 import { listMyBlocks } from "@/lib/safety";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
+import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
 import { Avatar } from "@/components/ui/Avatar";
 import { avatarPresetOrFallback } from "@/lib/avatar";
 import {
   HERO_AGE_COOKIE,
+  SUPPORT_EMAIL,
   ageBandFromYears,
   heroByAge,
   parseHeroAge,
@@ -72,6 +74,13 @@ export default async function SafetyPage({
         <p className="text-sm leading-7 text-white/90">
           若感到不舒服，隨時離開，並使用檢舉或封鎖。
         </p>
+        <p className="text-sm leading-7 text-white/90">
+          需要協助可來信{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}`} className="underline">
+            {SUPPORT_EMAIL}
+          </a>
+          。
+        </p>
       </StageTrack>
 
       <StageTrack n="02" title="已封鎖">
@@ -90,6 +99,10 @@ export default async function SafetyPage({
             );
           })
         )}
+      </StageTrack>
+
+      <StageTrack n="03" title="條款與客服">
+        <SiteLegalLinks tone="onDark" />
       </StageTrack>
     </StagePage>
   );

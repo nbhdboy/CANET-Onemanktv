@@ -5,6 +5,7 @@ import { loadContacts, loadProfile } from "@/lib/app-data";
 import { SettingsForms } from "@/components/settings/SettingsForms";
 import { SavedCardSettings } from "@/components/settings/SavedCardSettings";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
+import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
 import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
 import {
   HERO_AGE_COOKIE,
@@ -86,6 +87,9 @@ export default async function SettingsPage({
           tappayEnv={tappay.env}
           live={live}
         />
+      </StageTrack>
+      <StageTrack n="04" title="條款與客服">
+        <SiteLegalLinks tone="onDark" />
       </StageTrack>
     </StagePage>
   );

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { logoutAction } from "@/actions/auth";
+import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
 import { LogoutButton } from "@/components/profile/LogoutButton";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
@@ -196,6 +197,10 @@ export function ProfileBoard({
               <form action={logoutAction}>
                 <LogoutButton />
               </form>
+            </Track>
+
+            <Track n="04" title="條款與客服">
+              <SiteLegalLinks tone="onDark" />
             </Track>
           </div>
         </div>

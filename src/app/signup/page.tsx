@@ -1,4 +1,5 @@
 import { AuthForm } from "@/components/auth/AuthForm";
+import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
 
 export default function SignupPage() {
   return (
@@ -8,6 +9,7 @@ export default function SignupPage() {
         <h1 className="text-3xl font-bold mt-2">建立帳號</h1>
         <p className="text-[var(--muted)] mt-1 mb-6">年滿 18 歲才能使用。這不是交友軟體。</p>
         <AuthForm mode="signup" />
+        <SiteLegalLinks className="mt-8 border-t border-[var(--line)] pt-5" includeSafety={false} />
       </div>
     </main>
   );

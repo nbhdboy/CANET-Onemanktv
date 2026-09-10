@@ -1,4 +1,5 @@
 import { AuthForm } from "@/components/auth/AuthForm";
+import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
 import type { Search } from "@/lib/route-types";
 
 export default async function LoginPage({ searchParams }: { searchParams: Search }) {
@@ -12,6 +13,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         <h1 className="text-3xl font-bold mt-2">歡迎回來</h1>
         <p className="text-[var(--muted)] mt-1 mb-6">一個人想唱？找你的 +1。</p>
         <AuthForm mode="login" next={next} oauthError={oauthError} />
+        <SiteLegalLinks className="mt-8 border-t border-[var(--line)] pt-5" includeSafety={false} />
       </div>
     </main>
   );
