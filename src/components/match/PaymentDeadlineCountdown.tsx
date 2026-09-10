@@ -7,10 +7,12 @@ export function PaymentDeadlineCountdown({
   deadlineIso,
   prefix = "請在",
   suffix = "內完成媒合",
+  className = "text-sm text-[var(--muted)]",
 }: {
   deadlineIso: string | null | undefined;
   prefix?: string;
   suffix?: string;
+  className?: string;
 }) {
   const [label, setLabel] = useState(() =>
     deadlineIso ? countdownLabel(deadlineIso) : "--",
@@ -28,7 +30,7 @@ export function PaymentDeadlineCountdown({
   }, [deadlineIso]);
 
   return (
-    <p className="text-sm text-[var(--muted)]">
+    <p className={className}>
       {prefix} {label} {suffix}
     </p>
   );

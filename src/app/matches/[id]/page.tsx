@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
 import { getSession } from "@/lib/session";
 import {
   loadBrandForRequestApp,
@@ -15,14 +17,19 @@ import { BookingPanel } from "@/components/match/BookingPanel";
 import { ReviewForm } from "@/components/match/ReviewForm";
 import { SafetyActions } from "@/components/safety/SafetyActions";
 import { PaymentDeadlineCountdown } from "@/components/match/PaymentDeadlineCountdown";
+import { GlassFormShell } from "@/components/layout/GlassFormShell";
 import { canReview } from "@/lib/reviews";
 import { useSupabaseApp } from "@/lib/runtime";
 import { getTapPayPublicConfig, isLivePayment } from "@/lib/tappay/env";
 import { getPublicSavedCard } from "@/lib/tappay/cards";
-import { formatDateTime } from "@/lib/time";
+import {
+  HERO_AGE_COOKIE,
+  ageBandFromYears,
+  heroByAge,
+  parseHeroAge,
+} from "@/lib/constants";
+import { ageFromBirthYear, formatDateTime } from "@/lib/time";
 import { durationLabel } from "@/lib/format";
-import Link from "next/link";
-
 import type { IdParams } from "@/lib/route-types";
 
 export const dynamic = "force-dynamic";
@@ -58,12 +65,37 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
     : canReview(session.id, match.id);
   const points = Number(myProfile?.points ?? 0);
 
+  const fromCookie = parseHeroAge((await cookies()).get(HERO_AGE_COOKIE)?.value);
+  const fromProfile =
+    myProfile?.birth_year_private != null
+      ? ageBandFromYears(ageFromBirthYear(myProfile.birth_year_private))
+      : null;
+  const ageBand = fromCookie ?? fromProfile ?? (request.age_band as 20 | 30 | 40 | 50) ?? 20;
+  const hero = heroByAge(ageBand);
+  const accents = {
+    accent: hero.glassGlow,
+    accentSoft: hero.glassGlowSoft,
+    ctaFrom: hero.ctaFrom,
+  };
+
   if (match.status === "PENDING_PAYMENT" && myPay?.status === "PENDING") {
     const live = isLivePayment();
     const tappay = getTapPayPublicConfig();
     const savedCard = live ? await getPublicSavedCard(session.id).catch(() => null) : null;
+    const counterpartStatus = allPay
+      .filter((p) => p.user_id !== session.id)
+      .map((p) => (p.status === "PAID" || p.status === "NOT_REQUIRED" ? "已完成" : "等待中"))
+      .join("");
+
     return (
-      <main className="mx-auto max-w-lg px-4 py-10 space-y-6">
+      <GlassFormShell
+        ageBand={ageBand}
+        watermark="付款"
+        kicker={`K歌 +1 · ${hero.label}媒合`}
+        title="完成付款"
+        subtitle={`對方付款狀態：${counterpartStatus || "等待中"}`}
+        maxWidthClass="max-w-lg"
+      >
         {live ? (
           <TapPayCheckout
             paymentId={myPay.id}
@@ -75,6 +107,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
             tappayEnv={tappay.env}
             savedCard={savedCard}
             points={points}
+            {...accents}
           />
         ) : (
           <MockCheckout
@@ -82,88 +115,113 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
             amount={myPay.fee_due}
             deadlineIso={match.payment_deadline}
             points={points}
+            {...accents}
           />
         )}
-        <p className="text-sm text-[var(--muted)]">
-          對方付款狀態：
-          {allPay
-            .filter((p) => p.user_id !== session.id)
-            .map((p) => (p.status === "PAID" || p.status === "NOT_REQUIRED" ? "已完成" : "等待中"))
-            .join("")}
-        </p>
-      </main>
+      </GlassFormShell>
     );
   }
 
   if (match.status === "PENDING_PAYMENT") {
     return (
-      <main className="mx-auto max-w-lg px-4 py-10 space-y-4">
-        <h1 className="text-2xl font-bold">等待對方完成付款</h1>
-        <p className="text-[var(--muted)]">你這次無需支付平台服務費。對方完成後就會正式媒合。</p>
+      <GlassFormShell
+        ageBand={ageBand}
+        watermark="等待"
+        kicker={`K歌 +1 · ${hero.label}媒合`}
+        title="等待對方完成付款"
+        subtitle="你這次無需支付平台服務費。對方完成後就會正式媒合。"
+        maxWidthClass="max-w-lg"
+      >
         <PaymentDeadlineCountdown
           deadlineIso={match.payment_deadline}
           prefix="倒數"
           suffix=""
+          className="text-sm text-white/85"
         />
-      </main>
+      </GlassFormShell>
     );
   }
 
   if (match.status === "EXPIRED_PAYMENT" || match.status === "CANCELLED") {
     return (
-      <main className="mx-auto max-w-lg px-4 py-10 space-y-4">
-        <h1 className="text-2xl font-bold">這次媒合沒有成立</h1>
-        <p>這次媒合付款時間已結束，名額已重新開放。</p>
-        <p className="text-sm text-[var(--muted)]">第一次免費額度沒有被消耗。若你已付款，金額已轉成點數。</p>
-        <Link href="/" className="text-purple-700 font-semibold">
+      <GlassFormShell
+        ageBand={ageBand}
+        watermark="結束"
+        kicker={`K歌 +1 · ${hero.label}媒合`}
+        title="這次媒合沒有成立"
+        subtitle="這次媒合付款時間已結束，名額已重新開放。第一次免費額度沒有被消耗。若你已付款，金額已轉成點數。"
+        maxWidthClass="max-w-lg"
+      >
+        <Link
+          href="/"
+          className="inline-flex h-12 items-center justify-center rounded-full border border-white/70 px-6 text-sm font-semibold text-white"
+        >
           看看其他歌局
         </Link>
-      </main>
+      </GlassFormShell>
     );
   }
 
   return (
-    <main className="mx-auto max-w-lg px-4 py-10 space-y-6">
-      <section className="rounded-3xl neon-gradient text-white p-6">
-        <p className="text-sm opacity-90">🎉 找到你的 +1 啦！</p>
-        <h1 className="text-3xl font-bold mt-1">今晚就別再一個人唱情歌了。</h1>
-        <p className="mt-4">
-          {request.brand_name} {request.venue_name}
-        </p>
-        <p>
-          {formatDateTime(request.sing_at)} · 2 人 · 預計 {durationLabel(request.duration_hours)}
-        </p>
-      </section>
+    <main className="relative min-h-screen overflow-hidden text-white" style={{ backgroundColor: hero.bg }}>
+      <div className="grain pointer-events-none absolute inset-0 opacity-35" />
+      <div className="relative mx-auto max-w-lg space-y-6 px-4 py-10">
+        <section className="compose-glass relative overflow-hidden rounded-[28px] p-6">
+          <p className="text-sm text-white/90">🎉 找到你的 +1 啦！</p>
+          <h1
+            className="mt-1 text-white"
+            style={{
+              fontFamily: "Anton, sans-serif",
+              fontSize: "clamp(28px, 7vw, 40px)",
+              letterSpacing: "-0.03em",
+              lineHeight: 0.95,
+            }}
+          >
+            今晚就別再一個人唱情歌了。
+          </h1>
+          <p className="mt-4">
+            {request.brand_name} {request.venue_name}
+          </p>
+          <p>
+            {formatDateTime(request.sing_at)} · 2 人 · 預計 {durationLabel(request.duration_hours)}
+          </p>
+        </section>
 
-      {counterpart && (
-        <UnlockedContacts matchId={match.id} nickname={counterpart.nickname || "歌友"} />
-      )}
+        {counterpart ? (
+          <UnlockedContacts matchId={match.id} nickname={counterpart.nickname || "歌友"} />
+        ) : null}
 
-      {brand && (
-        <BookingPanel
+        {brand ? (
+          <BookingPanel
+            matchId={match.id}
+            brandName={brand.name}
+            bookingUrl={brand.booking_url}
+          />
+        ) : null}
+
+        <div className="compose-glass rounded-[24px] p-5 text-sm text-white">
+          <p className="font-semibold">第一次和新歌友見面？</p>
+          <p className="mt-2 text-white/85">建議：</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-white/85">
+            <li>告知朋友你的行程</li>
+            <li>選擇正常營業的公開 KTV</li>
+            <li>不要提供金融帳號、證件或敏感個資</li>
+            <li>如果感到不舒服，隨時離開並使用檢舉功能</li>
+          </ul>
+        </div>
+
+        {reviewGate.ok ? <ReviewForm matchId={match.id} {...accents} /> : null}
+        {reviewGate.reason === "TOO_EARLY" ? (
+          <p className="text-sm text-white/80">活動結束後就可以互評。</p>
+        ) : null}
+
+        <SafetyActions
+          userId={counterpartId}
           matchId={match.id}
-          brandName={brand.name}
-          bookingUrl={brand.booking_url}
+          requestId={match.request_id}
+          {...accents}
         />
-      )}
-
-      <div className="rounded-3xl bg-amber-50 p-5 text-sm space-y-2">
-        <p className="font-semibold">第一次和新歌友見面？</p>
-        <p>建議：</p>
-        <ul className="list-disc pl-5 space-y-1">
-          <li>告知朋友你的行程</li>
-          <li>選擇正常營業的公開 KTV</li>
-          <li>不要提供金融帳號、證件或敏感個資</li>
-          <li>如果感到不舒服，隨時離開並使用檢舉功能</li>
-        </ul>
       </div>
-
-      {reviewGate.ok && <ReviewForm matchId={match.id} />}
-      {reviewGate.reason === "TOO_EARLY" && (
-        <p className="text-sm text-[var(--muted)]">活動結束後就可以互評。</p>
-      )}
-
-      <SafetyActions userId={counterpartId} matchId={match.id} requestId={match.request_id} />
     </main>
   );
 }

@@ -224,7 +224,13 @@ export function RequestStage({
             </div>
             {isOwner && open ? <CancelRequestButton requestId={item.id} tone="onColor" /> : null}
             {!isOwner && sessionId ? (
-              <SafetyActions userId={item.initiator.id} requestId={item.id} />
+              <SafetyActions
+                userId={item.initiator.id}
+                requestId={item.id}
+                accent={hero.glassGlow}
+                accentSoft={hero.glassGlowSoft}
+                ctaFrom={hero.ctaFrom}
+              />
             ) : null}
             {!isOwner && !sessionId ? (
               <p className="text-sm text-white/90">

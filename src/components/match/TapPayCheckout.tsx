@@ -6,6 +6,7 @@ import { formatTwd } from "@/lib/format";
 import type { SavedCardView } from "@/components/settings/SavedCardSettings";
 import { PaymentDeadlineCountdown } from "@/components/match/PaymentDeadlineCountdown";
 import { PointsPayButton } from "@/components/match/PointsPayButton";
+import { glassCtaStyle, glassFieldClass } from "@/components/layout/GlassFormShell";
 
 type PayMethod = "saved_card" | "card" | "linepay";
 
@@ -19,6 +20,9 @@ export function TapPayCheckout({
   tappayEnv,
   savedCard,
   points = 0,
+  accent = "#F472B6",
+  accentSoft = "#FB7185",
+  ctaFrom = "#E56A3D",
 }: {
   paymentId: string;
   amount: number;
@@ -29,6 +33,9 @@ export function TapPayCheckout({
   tappayEnv: string;
   savedCard: SavedCardView | null;
   points?: number;
+  accent?: string;
+  accentSoft?: string;
+  ctaFrom?: string;
 }) {
   const router = useRouter();
   const [method, setMethod] = useState<PayMethod>(savedCard ? "saved_card" : "card");
@@ -243,12 +250,22 @@ export function TapPayCheckout({
         !(saveCard && card && !replaceExistingCard)));
 
   return (
-    <div className="rounded-3xl bg-white card-float p-6 space-y-4">
-      <PaymentDeadlineCountdown deadlineIso={deadlineIso} />
-      <h2 className="text-2xl font-bold">🎤 媒合即將成立</h2>
+    <div className="space-y-4 text-white" style={{ colorScheme: "light" }}>
+      <PaymentDeadlineCountdown deadlineIso={deadlineIso} className="text-sm text-white/80" />
+      <h2
+        className="text-white"
+        style={{
+          fontFamily: "Anton, sans-serif",
+          fontSize: "clamp(28px, 6vw, 36px)",
+          letterSpacing: "-0.03em",
+          lineHeight: 0.95,
+        }}
+      >
+        媒合即將成立
+      </h2>
       <p>
         本次平台媒合服務費 {formatTwd(amount)}
-        <span className="block text-sm text-[var(--muted)]">
+        <span className="mt-1 block text-sm text-white/80">
           完成後即可解鎖彼此聯絡方式。使用信用卡／LINE Pay 會開立應稅電子發票；全額點數支付則不開發票。
         </span>
       </p>
@@ -259,11 +276,17 @@ export function TapPayCheckout({
           <button
             type="button"
             onClick={() => setMethod("saved_card")}
-            className={`h-11 rounded-2xl border text-sm font-medium ${
-              method === "saved_card"
-                ? "border-purple-600 bg-purple-50 text-purple-800"
-                : "border-black/10"
+            className={`compose-glass-chip h-11 rounded-full text-sm font-medium ${
+              method === "saved_card" ? "is-on" : "text-white"
             }`}
+            style={
+              method === "saved_card"
+                ? {
+                    background: `linear-gradient(135deg, ${accentSoft}, ${accent})`,
+                    boxShadow: `0 8px 18px ${accent}55`,
+                  }
+                : undefined
+            }
           >
             已存卡
           </button>
@@ -271,75 +294,89 @@ export function TapPayCheckout({
         <button
           type="button"
           onClick={() => setMethod("card")}
-          className={`h-11 rounded-2xl border text-sm font-medium ${
-            method === "card" ? "border-purple-600 bg-purple-50 text-purple-800" : "border-black/10"
+          className={`compose-glass-chip h-11 rounded-full text-sm font-medium ${
+            method === "card" ? "is-on" : "text-white"
           }`}
+          style={
+            method === "card"
+              ? {
+                  background: `linear-gradient(135deg, ${accentSoft}, ${accent})`,
+                  boxShadow: `0 8px 18px ${accent}55`,
+                }
+              : undefined
+          }
         >
           信用卡
         </button>
         <button
           type="button"
           onClick={() => setMethod("linepay")}
-          className={`h-11 rounded-2xl border text-sm font-medium ${
-            method === "linepay"
-              ? "border-[#06C755] bg-[#06C755]/10 text-[#06C755]"
-              : "border-black/10"
+          className={`compose-glass-chip h-11 rounded-full text-sm font-medium ${
+            method === "linepay" ? "is-on" : "text-white"
           }`}
+          style={
+            method === "linepay"
+              ? {
+                  background: "linear-gradient(135deg, #34D399, #06C755)",
+                  boxShadow: "0 8px 18px rgba(6,199,85,0.35)",
+                }
+              : undefined
+          }
         >
           LINE Pay
         </button>
       </div>
 
-      <label className="block text-sm">
+      <label className="block space-y-1.5 text-sm font-medium">
         發票 Email
         <input
           type="email"
           value={buyerEmail}
           onChange={(e) => setBuyerEmail(e.target.value)}
-          className="mt-1 w-full h-11 rounded-2xl border px-3"
+          className={glassFieldClass}
           required
         />
       </label>
 
-      <label className="block text-sm">
+      <label className="block space-y-1.5 text-sm font-medium">
         手機條碼／自然人憑證（選填）
         <input
           type="text"
           value={carrier}
           onChange={(e) => setCarrier(e.target.value)}
           placeholder="/ABC+123 或 自然人憑證"
-          className="mt-1 w-full h-11 rounded-2xl border px-3"
+          className={glassFieldClass}
         />
       </label>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="block text-sm">
+        <label className="block space-y-1.5 text-sm font-medium">
           統編（選填，B2B）
           <input
             type="text"
             value={buyerIdentifier}
             onChange={(e) => setBuyerIdentifier(e.target.value)}
-            className="mt-1 w-full h-11 rounded-2xl border px-3"
+            className={glassFieldClass}
           />
         </label>
-        <label className="block text-sm">
+        <label className="block space-y-1.5 text-sm font-medium">
           買方名稱（有統編時建議填）
           <input
             type="text"
             value={buyerName}
             onChange={(e) => setBuyerName(e.target.value)}
-            className="mt-1 w-full h-11 rounded-2xl border px-3"
+            className={glassFieldClass}
           />
         </label>
       </div>
 
       {method === "saved_card" && card ? (
-        <div className="rounded-2xl border p-3 space-y-2">
+        <div className="compose-glass-field space-y-2 rounded-2xl p-3 text-[#1a1040]">
           <p className="text-sm font-medium">
             {card.brand || "信用卡"} ······ {card.last_four}
           </p>
           {(card.expiry_month || card.expiry_year) && (
-            <p className="text-xs text-[var(--muted)]">
+            <p className="text-xs text-[#6b6280]">
               到期 {card.expiry_month}/{card.expiry_year}
             </p>
           )}
@@ -355,19 +392,19 @@ export function TapPayCheckout({
       ) : null}
 
       {method === "card" && (
-        <div className="space-y-2 rounded-2xl border p-3">
+        <div className="compose-glass-field space-y-2 rounded-2xl p-3 text-[#1a1040]">
           <p className="text-sm font-medium">信用卡</p>
-          <div id="card-number" className="h-11 rounded-xl border px-3 flex items-center" />
+          <div id="card-number" className="flex h-11 items-center rounded-xl border px-3" />
           <div className="grid grid-cols-2 gap-2">
-            <div id="card-expiration-date" className="h-11 rounded-xl border px-3 flex items-center" />
-            <div id="card-ccv" className="h-11 rounded-xl border px-3 flex items-center" />
+            <div id="card-expiration-date" className="flex h-11 items-center rounded-xl border px-3" />
+            <div id="card-ccv" className="flex h-11 items-center rounded-xl border px-3" />
           </div>
-          {!ready && <p className="text-xs text-[var(--muted)]">正在載入付款元件…</p>}
+          {!ready && <p className="text-xs text-[#6b6280]">正在載入付款元件…</p>}
 
           <label className="mt-2 flex items-center gap-2 text-sm leading-snug">
             <input
               type="checkbox"
-              className="size-4 shrink-0 accent-purple-600"
+              className="size-4 shrink-0"
               checked={saveCard}
               onChange={(e) => {
                 const checked = e.target.checked;
@@ -379,14 +416,14 @@ export function TapPayCheckout({
           </label>
 
           {saveCard && card ? (
-            <div className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 space-y-2">
+            <div className="space-y-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">
               <p>
                 你已有存卡 {card.brand || "信用卡"} ······ {card.last_four}。要覆蓋成這張新卡嗎？
               </p>
               <label className="flex items-center gap-2 leading-snug">
                 <input
                   type="checkbox"
-                  className="size-4 shrink-0 accent-purple-600"
+                  className="size-4 shrink-0"
                   checked={replaceExistingCard}
                   onChange={(e) => setReplaceExistingCard(e.target.checked)}
                 />
@@ -401,18 +438,21 @@ export function TapPayCheckout({
       )}
 
       {method === "linepay" && (
-        <p className="text-sm text-[var(--muted)] rounded-2xl border p-3">
+        <p className="compose-glass-chip rounded-2xl p-3 text-sm text-white">
           將導向 LINE Pay 完成付款；成功後同樣開立應稅電子發票。
         </p>
       )}
 
-      {error && <p className="text-sm text-rose-600">{error}</p>}
+      {error ? (
+        <p className="rounded-2xl bg-black/30 px-3 py-2 text-sm text-amber-100">{error}</p>
+      ) : null}
 
       <button
         type="button"
         onClick={pay}
         disabled={!canSubmit}
-        className="w-full rounded-2xl neon-gradient text-white font-semibold h-12 disabled:opacity-50"
+        className="inline-flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold tracking-[0.12em] text-white disabled:opacity-50"
+        style={glassCtaStyle(accent, accentSoft, ctaFrom)}
       >
         {pending
           ? "處理中…"

@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { safeNextPath } from "@/lib/auth-redirect";
 
-export function GoogleLoginButton({ next }: { next?: string }) {
+export function GoogleLoginButton({
+  next,
+  glass = false,
+}: {
+  next?: string;
+  glass?: boolean;
+}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,11 +41,17 @@ export function GoogleLoginButton({ next }: { next?: string }) {
         type="button"
         onClick={startGoogleLogin}
         disabled={pending}
-        className="w-full rounded-2xl border border-[var(--line)] bg-white text-[var(--foreground)] font-semibold h-12 disabled:opacity-60"
+        className={
+          glass
+            ? "compose-glass-chip inline-flex h-12 w-full items-center justify-center rounded-full text-sm font-semibold text-white disabled:opacity-60"
+            : "h-12 w-full rounded-2xl border border-[var(--line)] bg-white font-semibold text-[var(--foreground)] disabled:opacity-60"
+        }
       >
         {pending ? "前往 Google…" : "使用 Google 登入"}
       </button>
-      {error && <p className="text-sm text-rose-600">{error}</p>}
+      {error ? (
+        <p className={`text-sm ${glass ? "text-amber-100" : "text-rose-600"}`}>{error}</p>
+      ) : null}
     </div>
   );
 }

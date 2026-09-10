@@ -81,6 +81,9 @@ export default async function SettingsPage({
         lineId={contacts?.line_id || ""}
         instagram={contacts?.instagram_handle || ""}
         threads={contacts?.threads_handle || ""}
+        accent={hero.glassGlow}
+        accentSoft={hero.glassGlowSoft}
+        ctaFrom={hero.ctaFrom}
       />
       <StageTrack n="03" title="付款方式">
         <SavedCardSettings
@@ -89,6 +92,9 @@ export default async function SettingsPage({
           appKey={tappay.appKey}
           tappayEnv={tappay.env}
           live={live}
+          accent={hero.glassGlow}
+          accentSoft={hero.glassGlowSoft}
+          ctaFrom={hero.ctaFrom}
         />
       </StageTrack>
       <StageTrack n="04" title="條款與客服">

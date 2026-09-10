@@ -1,16 +1,32 @@
+import { cookies } from "next/headers";
 import { AuthForm } from "@/components/auth/AuthForm";
+import { GlassFormShell } from "@/components/layout/GlassFormShell";
 import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
+import { HERO_AGE_COOKIE, heroByAge, parseHeroAge } from "@/lib/constants";
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  const ageBand = parseHeroAge((await cookies()).get(HERO_AGE_COOKIE)?.value) ?? 20;
+  const hero = heroByAge(ageBand);
+
   return (
-    <main className="min-h-screen neon-gradient flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md rounded-3xl bg-white p-8 card-float">
-        <p className="text-xs tracking-[0.18em] uppercase font-semibold text-purple-700">K歌 +1</p>
-        <h1 className="text-3xl font-bold mt-2">建立帳號</h1>
-        <p className="text-[var(--muted)] mt-1 mb-6">年滿 18 歲才能使用。這不是交友軟體。</p>
-        <AuthForm mode="signup" />
-        <SiteLegalLinks className="mt-8 border-t border-[var(--line)] pt-5" includeSafety={false} />
-      </div>
-    </main>
+    <GlassFormShell
+      ageBand={ageBand}
+      watermark="註冊"
+      kicker={`K歌 +1 · ${hero.label}`}
+      title="建立帳號"
+      subtitle="年滿 18 歲才能使用。這不是交友軟體。"
+    >
+      <AuthForm
+        mode="signup"
+        accent={hero.glassGlow}
+        accentSoft={hero.glassGlowSoft}
+        ctaFrom={hero.ctaFrom}
+      />
+      <SiteLegalLinks
+        className="mt-8 border-t border-white/25 pt-5"
+        tone="onDark"
+        includeSafety={false}
+      />
+    </GlassFormShell>
   );
 }
