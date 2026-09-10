@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Bell, Mic2, Music2, UserRound, Plus } from "lucide-react";
+import { logoutAction } from "@/actions/auth";
 import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
 
 type UserLite = {
@@ -15,6 +16,7 @@ type UserLite = {
 };
 
 const HIDE_NAV = ["/login", "/signup", "/onboarding"];
+const authLinkCls = "flex h-10 items-center px-3 text-sm font-semibold text-purple-700";
 
 export function AppChrome({
   user,
@@ -93,12 +95,14 @@ export function AppChrome({
                 >
                   {user.nickname}
                 </button>
+                <form action={logoutAction} onSubmit={() => setNavLoading(true)}>
+                  <button type="submit" className={authLinkCls}>
+                    登出
+                  </button>
+                </form>
               </>
             ) : (
-              <Link
-                href="/login"
-                className="flex h-10 items-center px-3 text-sm font-semibold text-purple-700"
-              >
+              <Link href="/login" className={authLinkCls}>
                 登入
               </Link>
             )}
