@@ -30,7 +30,11 @@ export function NotificationList({ items }: { items: NotificationRecord[] }) {
   }
 
   if (loading) {
-    return <EqualizerLoader />;
+    return (
+      <div className="fixed inset-0 z-[200] flex min-h-dvh items-center justify-center bg-[var(--background)]">
+        <EqualizerLoader />
+      </div>
+    );
   }
 
   if (items.length === 0) {
