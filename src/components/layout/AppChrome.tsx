@@ -17,7 +17,7 @@ type UserLite = {
 
 const HIDE_NAV = ["/login", "/signup", "/onboarding"];
 const authLinkCls =
-  "inline-flex h-10 items-center px-3 text-sm font-semibold leading-none text-purple-700";
+  "inline-flex h-11 min-h-11 items-center px-3 text-sm font-semibold leading-none text-purple-700";
 
 export function AppChrome({
   user,
@@ -52,7 +52,7 @@ export function AppChrome({
     <>
       {!hide && (
         <header className="hidden lg:flex sticky top-0 z-40 h-16 items-center gap-8 border-b border-[var(--line)] bg-white/80 px-8 backdrop-blur-md">
-          <Link href="/" className="inline-flex h-10 shrink-0 items-center font-bold tracking-wide text-lg">
+          <Link href="/" className="inline-flex h-11 min-h-11 shrink-0 items-center font-bold tracking-wide text-lg leading-none">
             🎤 K歌 +1
           </Link>
           <nav className="flex min-w-0 flex-1 items-center gap-6 text-sm font-medium">
@@ -74,12 +74,12 @@ export function AppChrome({
               </Link>
             )}
           </nav>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex h-11 shrink-0 items-center gap-1">
             {user ? (
               <>
                 <Link
                   href="/notifications"
-                  className="relative inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-black/5"
+                  className="relative inline-flex h-11 w-11 min-h-11 items-center justify-center rounded-full hover:bg-black/5"
                   aria-label="通知"
                 >
                   <Bell size={20} />
@@ -92,14 +92,14 @@ export function AppChrome({
                 <button
                   type="button"
                   onClick={goProfile}
-                  className="inline-flex h-10 items-center rounded-full px-3 text-sm text-[var(--muted)] transition-colors hover:bg-black/5 hover:text-foreground"
+                  className="inline-flex h-11 min-h-11 items-center rounded-full px-3 text-sm leading-none text-[var(--muted)] transition-colors hover:bg-black/5 hover:text-foreground"
                 >
                   {user.nickname}
                 </button>
                 <form
                   action={logoutAction}
                   onSubmit={() => setNavLoading(true)}
-                  className="m-0 inline-flex h-10 items-center p-0"
+                  className="m-0 inline-flex h-11 items-center p-0"
                 >
                   <button type="submit" className={authLinkCls}>
                     登出
@@ -132,7 +132,7 @@ export function AppChrome({
 }
 
 function navCls(active: boolean) {
-  return `inline-flex h-10 items-center leading-none ${
+  return `inline-flex h-11 min-h-11 items-center leading-none ${
     active ? "text-purple-700" : "text-[var(--muted)] hover:text-foreground"
   }`;
 }
