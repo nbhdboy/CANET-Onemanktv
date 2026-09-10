@@ -53,6 +53,8 @@ export default async function SafetyPage({
           sub={blocks.length ? `已封鎖 ${blocks.length} 人` : "尚未封鎖任何人"}
           from={preset.from}
           to={preset.to}
+          imageUrl="/stage/safety-3d.png"
+          imageFit="contain"
         />
       }
     >

@@ -101,6 +101,7 @@ export function StageDisc({
   from,
   to,
   imageUrl,
+  imageFit = "cover",
 }: {
   emoji: string;
   badge: string;
@@ -109,6 +110,7 @@ export function StageDisc({
   from: string;
   to: string;
   imageUrl?: string | null;
+  imageFit?: "cover" | "contain";
 }) {
   return (
     <div className="relative mx-auto flex h-[400px] max-w-[280px] items-center justify-center">
@@ -129,11 +131,21 @@ export function StageDisc({
         >
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img
+              src={imageUrl}
+              alt=""
+              className={`absolute inset-0 h-full w-full ${
+                imageFit === "contain" ? "object-contain p-6" : "object-cover"
+              }`}
+            />
           ) : null}
           <div
-            className={`relative z-10 flex h-full w-full flex-col items-center justify-center ${
-              imageUrl ? "bg-gradient-to-b from-black/35 via-black/20 to-black/55" : ""
+            className={`relative z-10 flex h-full w-full flex-col items-center ${
+              imageUrl && imageFit === "contain"
+                ? "justify-end bg-gradient-to-b from-transparent via-transparent to-black/70 pb-7"
+                : imageUrl
+                  ? "justify-center bg-gradient-to-b from-black/35 via-black/20 to-black/55"
+                  : "justify-center"
             }`}
           >
             <p className="absolute left-1/2 top-6 -translate-x-1/2 rounded-full border border-white/40 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] text-white/90">
@@ -144,7 +156,11 @@ export function StageDisc({
                 {emoji}
               </span>
             ) : null}
-            <p className={`px-6 text-xl font-bold leading-tight ${imageUrl ? "mt-16" : "mt-3"}`}>
+            <p
+              className={`px-6 text-xl font-bold leading-tight ${
+                imageUrl ? (imageFit === "contain" ? "" : "mt-16") : "mt-3"
+              }`}
+            >
               {title}
             </p>
             <p className="mt-1 px-6 text-sm text-white/85">{sub}</p>

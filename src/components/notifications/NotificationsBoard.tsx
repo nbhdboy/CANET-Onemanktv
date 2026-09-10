@@ -52,12 +52,14 @@ export function NotificationsBoard({
       liveLabel="LIVE 信箱"
       aside={
         <StageDisc
-          emoji="🔔"
+          emoji="🎤"
           badge={unread ? "未讀" : "已讀完"}
           title={unread ? String(unread).padStart(2, "0") : "00"}
           sub={unread ? "則還沒看" : "目前沒有未讀"}
           from={discFrom}
           to={discTo}
+          imageUrl="/stage/notify-3d.png"
+          imageFit="contain"
         />
       }
     >
