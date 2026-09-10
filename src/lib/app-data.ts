@@ -6,7 +6,7 @@ import {
   saveOwnContacts,
   updateProfileFields,
 } from "@/lib/users";
-import { unreadCount, listNotifications, markAllRead } from "@/lib/notifications";
+import { unreadCount, listNotifications, markAllRead, markRead } from "@/lib/notifications";
 import {
   completeSupabaseOnboarding,
   fetchSupabaseContacts,
@@ -17,6 +17,7 @@ import {
 import {
   listSupabaseNotifications,
   markSupabaseAllRead,
+  markSupabaseRead,
   unreadSupabaseCount,
 } from "@/lib/supabase/notifications";
 import { ageFromBirthYear } from "@/lib/time";
@@ -71,6 +72,14 @@ export async function markNotificationsReadApp(userId: string) {
     return;
   }
   markAllRead(userId);
+}
+
+export async function markNotificationReadApp(userId: string, id: string) {
+  if (useSupabaseApp()) {
+    await markSupabaseRead(userId, id);
+    return;
+  }
+  markRead(userId, id);
 }
 
 export async function saveContactsApp(

@@ -1,4 +1,5 @@
 import { logApp, logAppError } from "@/lib/log";
+import { withNotificationHref } from "@/lib/notification-links";
 import { grantPointsFromPaidPayment } from "@/lib/supabase/credits";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 
@@ -96,12 +97,12 @@ export async function runSupabaseMaintenance() {
         await client.from("notifications").insert({
           user_id: uid,
           type: "payment_timeout",
-          payload: {
+          payload: withNotificationHref("payment_timeout", {
             matchId: match.id,
             requestId: match.request_id,
             reopened: canReopen,
             message: timeoutMessage,
-          },
+          }),
           is_read: false,
         });
       }

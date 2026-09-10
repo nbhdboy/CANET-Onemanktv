@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { DEFAULT_CONFIG } from "@/lib/constants";
 import { toPublicProfile } from "@/lib/format";
 import { logApp, logAppError } from "@/lib/log";
+import { withNotificationHref } from "@/lib/notification-links";
 import { isPast } from "@/lib/time";
 import { fetchSupabaseContacts, fetchSupabaseProfile } from "@/lib/supabase/profiles";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
@@ -141,11 +142,11 @@ export async function rejectSupabaseApplication(userId: string, applicationId: s
   await client.from("notifications").insert({
     user_id: app.applicant_id,
     type: "application_rejected",
-    payload: {
+    payload: withNotificationHref("application_rejected", {
       applicationId,
       requestId: app.request_id,
       message: "這次沒有媒合成功，再看看其他歌局吧。",
-    },
+    }),
     is_read: false,
   });
 
@@ -208,13 +209,19 @@ export async function maybeConfirmSupabaseMatch(matchId: string) {
     {
       user_id: updated.initiator_id,
       type: "match_success",
-      payload: { matchId, message: "🎤 找到你的 K歌 +1！" },
+      payload: withNotificationHref("match_success", {
+        matchId,
+        message: "🎤 找到你的 K歌 +1！",
+      }),
       is_read: false,
     },
     {
       user_id: updated.participant_id,
       type: "match_success",
-      payload: { matchId, message: "🎤 找到你的 K歌 +1！" },
+      payload: withNotificationHref("match_success", {
+        matchId,
+        message: "🎤 找到你的 K歌 +1！",
+      }),
       is_read: false,
     },
   ]);
@@ -321,11 +328,11 @@ export async function acceptSupabaseApplication(userId: string, applicationId: s
   await client.from("notifications").insert({
     user_id: app.applicant_id,
     type: "application_accepted",
-    payload: {
+    payload: withNotificationHref("application_accepted", {
       matchId,
       requestId: app.request_id,
       message: "🎉 對方接受你的邀請了！",
-    },
+    }),
     is_read: false,
   });
 
@@ -334,10 +341,10 @@ export async function acceptSupabaseApplication(userId: string, applicationId: s
       await client.from("notifications").insert({
         user_id: row.user_id,
         type: "payment_needed",
-        payload: {
+        payload: withNotificationHref("payment_needed", {
           matchId,
           message: `完成 NT$${row.fee_due} 平台服務費即可正式媒合。`,
-        },
+        }),
         is_read: false,
       });
     }

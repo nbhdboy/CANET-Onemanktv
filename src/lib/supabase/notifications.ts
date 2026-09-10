@@ -1,5 +1,6 @@
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import { logApp, logAppError } from "@/lib/log";
+import { withNotificationHref } from "@/lib/notification-links";
 import type { NotificationRecord } from "@/lib/types";
 
 function client() {
@@ -76,4 +77,45 @@ export async function markSupabaseAllRead(userId: string) {
     throw new Error(error.message);
   }
   logApp("notifications.mark_all_read", { userId });
+}
+
+export async function markSupabaseRead(userId: string, id: string) {
+  const supabase = client();
+  const { error } = await supabase
+    .from("notifications")
+    .update({ is_read: true })
+    .eq("user_id", userId)
+    .eq("id", id);
+  if (error) {
+    logAppError("notifications.mark_one_failed", {
+      userId,
+      id,
+      message: error.message,
+      code: error.code,
+    });
+    throw new Error(error.message);
+  }
+}
+
+export async function insertSupabaseNotification(input: {
+  userId: string;
+  type: string;
+  payload: Record<string, unknown>;
+}) {
+  const supabase = client();
+  const { error } = await supabase.from("notifications").insert({
+    user_id: input.userId,
+    type: input.type,
+    payload: withNotificationHref(input.type, input.payload),
+    is_read: false,
+  });
+  if (error) {
+    logAppError("notifications.insert_failed", {
+      userId: input.userId,
+      type: input.type,
+      message: error.message,
+      code: error.code,
+    });
+    throw new Error(error.message);
+  }
 }

@@ -5,8 +5,9 @@ import { loadNotifications, loadProfile, loadUnread } from "@/lib/app-data";
 import { markNotificationsReadAction } from "@/actions/admin";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
 import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton";
+import { NotificationList } from "@/components/notifications/NotificationList";
 import { avatarPresetOrFallback } from "@/lib/avatar";
-import { ageFromBirthYear, formatDateTime, relativeFromNow } from "@/lib/time";
+import { ageFromBirthYear } from "@/lib/time";
 import {
   HERO_AGE_COOKIE,
   ageBandFromYears,
@@ -71,32 +72,7 @@ export default async function NotificationsPage({
       </StageTrack>
 
       <StageTrack n="02" title="訊息">
-        {items.length === 0 ? (
-          <p className="text-sm text-white/80">目前沒有通知。</p>
-        ) : (
-          items.map((n) => {
-            let message = n.type;
-            try {
-              const payload = JSON.parse(n.payload || "{}") as { message?: string };
-              if (payload.message) message = payload.message;
-            } catch {
-              /* keep type */
-            }
-            return (
-              <article
-                key={n.id}
-                className={`border px-5 py-4 ${
-                  n.is_read ? "border-white/35 text-white/80" : "border-white text-white"
-                }`}
-              >
-                <p className="font-medium">{message}</p>
-                <p className="mt-1 text-xs text-white/70">
-                  {formatDateTime(n.created_at)} · {relativeFromNow(n.created_at)}
-                </p>
-              </article>
-            );
-          })
-        )}
+        <NotificationList items={items} />
       </StageTrack>
     </StagePage>
   );

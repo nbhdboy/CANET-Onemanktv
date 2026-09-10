@@ -11,7 +11,7 @@ import {
   updateBrand,
   upsertVenue,
 } from "@/lib/admin";
-import { markNotificationsReadApp } from "@/lib/app-data";
+import { markNotificationReadApp, markNotificationsReadApp } from "@/lib/app-data";
 import type { ActionResult } from "@/lib/types";
 import type { UserStatus } from "@/lib/types";
 
@@ -81,6 +81,17 @@ export async function markNotificationsReadAction() {
   const s = await requireSession();
   await markNotificationsReadApp(s.id);
   revalidatePath("/notifications");
+}
+
+export async function openNotificationAction(id: string, href: string) {
+  const s = await requireSession();
+  if (!id || !href.startsWith("/")) {
+    return { ok: false as const, error: "無效的通知。" };
+  }
+  await markNotificationReadApp(s.id, id);
+  revalidatePath("/notifications");
+  revalidatePath("/");
+  return { ok: true as const, href };
 }
 
 export async function adminDashboard() {

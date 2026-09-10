@@ -11,6 +11,7 @@ import {
 import { ageBandFromYears } from "@/lib/constants";
 import { hasContact, parseJsonArray, toPublicProfile } from "@/lib/format";
 import { logApp, logAppError } from "@/lib/log";
+import { withNotificationHref } from "@/lib/notification-links";
 import { assertActive } from "@/lib/users";
 import { fetchSupabaseContacts, fetchSupabaseProfile } from "@/lib/supabase/profiles";
 import { ensureSupabaseKtvCatalog } from "@/lib/supabase/venues";
@@ -391,12 +392,12 @@ export async function applySupabaseRequest(userId: string, requestId: string) {
   await client.from("notifications").insert({
     user_id: req.initiator_id,
     type: "application_received",
-    payload: {
+    payload: withNotificationHref("application_received", {
       requestId,
       applicationId: data.id,
       nickname: profile.nickname || "歌友",
       message: `🎤 ${profile.nickname || "歌友"}想加入你今晚的歌局！`,
-    },
+    }),
     is_read: false,
   });
 

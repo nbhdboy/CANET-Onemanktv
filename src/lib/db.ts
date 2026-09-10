@@ -6,6 +6,7 @@ import { DEFAULT_CONFIG } from "./constants";
 import { SEED_VENUES, VENUE_SEED_VERSION, seedVenueId } from "./ktv-venues";
 import { nowIso } from "./time";
 import { useSupabaseApp } from "./runtime";
+import { withNotificationHref } from "@/lib/notification-links";
 
 const globalForDb = globalThis as unknown as { kplus1Db?: Database.Database };
 
@@ -410,5 +411,5 @@ export function notify(
       `INSERT INTO notifications (id, user_id, type, payload, is_read, created_at)
        VALUES (?, ?, ?, ?, 0, ?)`,
     )
-    .run(nid(), userId, type, JSON.stringify(payload), nowIso());
+    .run(nid(), userId, type, JSON.stringify(withNotificationHref(type, payload)), nowIso());
 }

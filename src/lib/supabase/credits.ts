@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { logApp, logAppError } from "@/lib/log";
+import { withNotificationHref } from "@/lib/notification-links";
 import { createSupabaseServiceClient } from "@/lib/supabase/server";
 import type { CreditLedgerEntry } from "@/lib/types";
 
@@ -103,13 +104,13 @@ export async function grantPointsFromPaidPayment(input: {
   await client.from("notifications").insert({
     user_id: input.userId,
     type: "points_credit",
-    payload: {
+    payload: withNotificationHref("points_credit", {
       matchId: input.matchId,
       paymentId: input.paymentId,
       delta: input.amount,
       balance: next,
       message: `+${input.amount} 點：${message}`,
-    },
+    }),
     is_read: false,
   });
 
@@ -198,13 +199,13 @@ export async function redeemPointsForPayment(userId: string, paymentId: string) 
   await client.from("notifications").insert({
     user_id: userId,
     type: "points_redeem",
-    payload: {
+    payload: withNotificationHref("points_redeem", {
       matchId: pay.match_id,
       paymentId,
       delta: -amount,
       balance: next,
       message: `-${amount} 點：${message}`,
-    },
+    }),
     is_read: false,
   });
 
