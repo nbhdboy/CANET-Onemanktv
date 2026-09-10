@@ -35,13 +35,27 @@ export function OnboardingForm() {
       <Field name="lineId" label="LINE ID" />
       <Field name="instagram" label="Instagram" />
       <Field name="threads" label="Threads" />
-      <label className="flex items-start gap-3 text-sm">
-        <input name="age" type="checkbox" required className="mt-1 w-5 h-5" />
-        <span>我確認已年滿 18 歲，並了解這不是交友或約會服務。</span>
+      <label className="flex flex-row items-start gap-3 text-sm leading-6">
+        <input
+          name="age"
+          type="checkbox"
+          required
+          className="mt-0.5 size-5 shrink-0 rounded border border-[var(--line)]"
+        />
+        <span className="min-w-0 flex-1">
+          我確認已年滿 18 歲，並了解這不是交友或約會服務。
+        </span>
       </label>
-      <label className="flex items-start gap-3 text-sm">
-        <input name="terms" type="checkbox" required className="mt-1 w-5 h-5" />
-        <span>我同意使用條款、隱私權政策，以及陌生人見面的安全建議。</span>
+      <label className="flex flex-row items-start gap-3 text-sm leading-6">
+        <input
+          name="terms"
+          type="checkbox"
+          required
+          className="mt-0.5 size-5 shrink-0 rounded border border-[var(--line)]"
+        />
+        <span className="min-w-0 flex-1">
+          我同意使用條款、隱私權政策，以及陌生人見面的安全建議。
+        </span>
       </label>
       {state.error && <p className="text-sm text-rose-600">{state.error}</p>}
       <button
