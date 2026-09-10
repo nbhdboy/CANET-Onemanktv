@@ -2,16 +2,12 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { loadNotifications, loadProfile, loadUnread } from "@/lib/app-data";
-import { markNotificationsReadAction } from "@/actions/admin";
-import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
-import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton";
-import { NotificationList } from "@/components/notifications/NotificationList";
+import { NotificationsBoard } from "@/components/notifications/NotificationsBoard";
 import { avatarPresetOrFallback } from "@/lib/avatar";
 import { ageFromBirthYear } from "@/lib/time";
 import {
   HERO_AGE_COOKIE,
   ageBandFromYears,
-  heroByAge,
   parseHeroAge,
 } from "@/lib/constants";
 import type { Search } from "@/lib/route-types";
@@ -40,40 +36,12 @@ export default async function NotificationsPage({
   const preset = avatarPresetOrFallback(profile?.avatar_url);
 
   return (
-    <StagePage
+    <NotificationsBoard
       ageBand={ageBand}
-      watermark="通知"
-      kicker={`K歌 +1 · ${heroByAge(ageBand).label}信箱`}
-      liveLabel="LIVE 信箱"
-      aside={
-        <StageDisc
-          emoji="🔔"
-          badge={unread ? "未讀" : "已讀完"}
-          title={unread ? String(unread).padStart(2, "0") : "00"}
-          sub={unread ? "則還沒看" : "目前沒有未讀"}
-          from={preset.from}
-          to={preset.to}
-        />
-      }
-    >
-      <div>
-        <StageTitle>
-          有人找你
-          <br />
-          唱
-        </StageTitle>
-        <p className="mt-3 max-w-md text-sm text-white/88">申請、媒合與系統訊息都會出現在這裡。</p>
-      </div>
-
-      <StageTrack n="01" title="未讀與已讀">
-        <form action={markNotificationsReadAction}>
-          <MarkAllReadButton />
-        </form>
-      </StageTrack>
-
-      <StageTrack n="02" title="訊息">
-        <NotificationList items={items} />
-      </StageTrack>
-    </StagePage>
+      unread={unread}
+      discFrom={preset.from}
+      discTo={preset.to}
+      items={items}
+    />
   );
 }
