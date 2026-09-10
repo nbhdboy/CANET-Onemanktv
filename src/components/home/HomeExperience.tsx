@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ToonHero } from "@/components/hero/ToonHero";
-import { FeedFilters } from "@/components/feed/FeedFilters";
+import { FeedFilters, type FeedFilterState } from "@/components/feed/FeedFilters";
 import { SpatialRequestDeck } from "@/components/feed/SpatialRequestDeck";
 import { EmptyFeed } from "@/components/feed/EmptyFeed";
 import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
@@ -39,34 +39,57 @@ export function HomeExperience({
   );
   const [activeIndex, setActiveIndex] = useState(startIndex);
   const [items, setItems] = useState(initialItems);
+  const [activeFilters, setActiveFilters] = useState(filters);
   const [isPending, startTransition] = useTransition();
   const hero = HERO_IMAGES[activeIndex];
 
   useEffect(() => {
     setItems(initialItems);
     setActiveIndex(startIndex);
+    setActiveFilters(filters);
     rememberHeroAge(HERO_IMAGES[startIndex].age);
-  }, [initialItems, startIndex]);
+  }, [initialItems, startIndex, filters]);
 
   useEffect(() => {
     rememberHeroAge(hero.age);
   }, [hero.age]);
+
+  function syncUrl(nextFilters: Omit<FeedFilterValues, "age">, age: number) {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(nextFilters)) {
+      if (v) params.set(k, String(v));
+    }
+    params.set("age", String(age));
+    router.replace(`/?${params.toString()}`, { scroll: false });
+  }
+
+  function loadFeed(nextFilters: Omit<FeedFilterValues, "age">, age: number) {
+    setActiveFilters(nextFilters);
+    startTransition(async () => {
+      const nextItems = await fetchFeedAction({ ...nextFilters, age });
+      setItems(nextItems);
+      syncUrl(nextFilters, age);
+    });
+  }
 
   function go(dir: "next" | "prev") {
     const nextIndex = dir === "next" ? (activeIndex + 1) % 4 : (activeIndex + 3) % 4;
     setActiveIndex(nextIndex);
     const age = HERO_IMAGES[nextIndex].age;
     rememberHeroAge(age);
-    const params = new URLSearchParams();
-    for (const [k, v] of Object.entries(filters)) {
-      if (v) params.set(k, String(v));
-    }
-    params.set("age", String(age));
-    startTransition(async () => {
-      const nextItems = await fetchFeedAction({ ...filters, age });
-      setItems(nextItems);
-      router.replace(`/?${params.toString()}`, { scroll: false });
-    });
+    loadFeed(activeFilters, age);
+  }
+
+  function applyFilters(next: FeedFilterState) {
+    const age = next.age ?? hero.age;
+    const nextFilters: Omit<FeedFilterValues, "age"> = {
+      when: next.when,
+      city: next.city,
+      brand: next.brand,
+      venue: next.venue,
+      posted: next.posted,
+    };
+    loadFeed(nextFilters, age);
   }
 
   return (
@@ -119,14 +142,12 @@ export function HomeExperience({
             cities={cities}
             brands={brands}
             venues={venues}
-            current={{ ...filters, age: hero.age }}
+            current={{ ...activeFilters, age: hero.age }}
             onColor
+            onApply={applyFilters}
           />
         </div>
-        <div
-          className="relative mt-8 w-full overflow-x-clip pb-36 lg:pb-16"
-          style={{ opacity: isPending ? 0.85 : 1, transition: "opacity 200ms ease" }}
-        >
+        <div className="relative mt-8 w-full overflow-x-clip pb-36 lg:pb-16">
           {isPending ? (
             <div className="mx-auto max-w-[1120px] px-4">
               <div className="rounded-3xl bg-white/90 p-10 shadow-[0_18px_50px_rgba(0,0,0,0.12)]">
@@ -135,7 +156,13 @@ export function HomeExperience({
             </div>
           ) : items.length === 0 ? (
             <div className="mx-auto max-w-[1120px] px-4">
-              <EmptyFeed ageLabel={hero.label} age={hero.age} onColor />
+              <EmptyFeed
+                ageLabel={hero.label}
+                age={hero.age}
+                onColor
+                ctaFrom={hero.bg}
+                ctaTo={hero.panel}
+              />
             </div>
           ) : (
             <SpatialRequestDeck items={items} sessionId={sessionId} />

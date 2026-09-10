@@ -1,9 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import type { KtvBrand, KtvVenue } from "@/lib/types";
 import { preferredCity, sortCities, venuesMatching } from "@/lib/ktv-venues";
+
+export type FeedFilterState = {
+  when?: string;
+  city?: string;
+  brand?: string;
+  venue?: string;
+  posted?: string;
+  age?: number;
+};
 
 export function FeedFilters({
   cities,
@@ -11,19 +19,14 @@ export function FeedFilters({
   venues,
   current,
   onColor = false,
+  onApply,
 }: {
   cities: string[];
   brands: KtvBrand[];
   venues: KtvVenue[];
-  current: {
-    when?: string;
-    city?: string;
-    brand?: string;
-    venue?: string;
-    posted?: string;
-    age?: number;
-  };
+  current: FeedFilterState;
   onColor?: boolean;
+  onApply?: (next: FeedFilterState) => void;
 }) {
   const when = current.when || "";
   const [city, setCity] = useState(current.city || "");
@@ -68,15 +71,38 @@ export function FeedFilters({
   const field = onColor
     ? "rounded-2xl bg-white/90 px-3 h-12 text-foreground"
     : "rounded-2xl bg-white px-3 h-12";
+  const clearCls = onColor
+    ? "shrink-0 self-end sm:self-auto rounded-full border border-white/80 px-4 h-11 text-sm font-medium text-white transition-colors hover:bg-white hover:text-[#1a1040]"
+    : "shrink-0 self-end sm:self-auto rounded-full border border-black/20 px-4 h-11 text-sm font-medium transition-colors hover:bg-black/5";
 
-  function href(patch: Record<string, string | undefined>) {
+  const hasFilters = Boolean(when || city || brand || venue || posted);
+
+  function apply(patch: Partial<FeedFilterState>) {
+    const merged: FeedFilterState = {
+      ...current,
+      city,
+      brand,
+      venue,
+      posted,
+      ...patch,
+    };
+    const cleaned: FeedFilterState = { age: merged.age };
+    if (merged.when) cleaned.when = merged.when;
+    if (merged.city) cleaned.city = merged.city;
+    if (merged.brand) cleaned.brand = merged.brand;
+    if (merged.venue) cleaned.venue = merged.venue;
+    if (merged.posted) cleaned.posted = merged.posted;
+
+    if (onApply) {
+      onApply(cleaned);
+      return;
+    }
     const next = new URLSearchParams();
-    const merged = { ...current, city, brand, venue, posted, ...patch };
-    for (const [k, v] of Object.entries(merged)) {
+    for (const [k, v] of Object.entries(cleaned)) {
       if (v != null && v !== "") next.set(k, String(v));
     }
     const q = next.toString();
-    return q ? `/?${q}#feed` : "/#feed";
+    window.location.assign(q ? `/?${q}#feed` : "/#feed");
   }
 
   function pickCity(nextCity: string) {
@@ -114,25 +140,49 @@ export function FeedFilters({
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2 overflow-x-auto pb-1">
-        {chips.map((c) => (
-          <Link
-            key={c.id}
-            href={href({ when: when === c.id ? undefined : c.id })}
-            className={`shrink-0 rounded-full px-4 h-11 text-sm font-medium inline-flex items-center ${
-              when === c.id ? active : idle
-            }`}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {chips.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => apply({ when: when === c.id ? undefined : c.id })}
+              className={`shrink-0 rounded-full px-4 h-11 text-sm font-medium inline-flex items-center ${
+                when === c.id ? active : idle
+              }`}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+        {hasFilters ? (
+          <button
+            type="button"
+            onClick={() => {
+              setCity("");
+              setBrand("");
+              setVenue("");
+              setPosted("");
+              apply({
+                when: undefined,
+                city: undefined,
+                brand: undefined,
+                venue: undefined,
+                posted: undefined,
+              });
+            }}
+            className={clearCls}
           >
-            {c.label}
-          </Link>
-        ))}
+            清除篩選
+          </button>
+        ) : null}
       </div>
       <form
         action="/#feed"
         method="get"
         onSubmit={(e) => {
           e.preventDefault();
-          window.location.assign(href({}));
+          apply({});
         }}
         className="grid grid-cols-2 sm:grid-cols-4 gap-2"
       >

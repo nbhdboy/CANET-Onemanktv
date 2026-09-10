@@ -4,11 +4,16 @@ export function EmptyFeed({
   ageLabel,
   age,
   onColor = false,
+  ctaFrom,
+  ctaTo,
 }: {
   ageLabel?: string;
   age?: number;
   onColor?: boolean;
+  ctaFrom?: string;
+  ctaTo?: string;
 }) {
+  const useAgeGradient = Boolean(ctaFrom && ctaTo);
   return (
     <div
       className={`rounded-3xl p-10 text-center space-y-4 ${
@@ -24,7 +29,16 @@ export function EmptyFeed({
       <p className="text-[var(--muted)]">不如你來當第一個開唱的人？</p>
       <Link
         href={age ? `/requests/new?age=${age}` : "/requests/new"}
-        className="inline-flex min-h-12 items-center justify-center rounded-2xl neon-gradient text-white px-6 font-semibold"
+        className={`inline-flex min-h-12 items-center justify-center rounded-2xl text-white px-6 font-semibold ${
+          useAgeGradient ? "" : "neon-gradient"
+        }`}
+        style={
+          useAgeGradient
+            ? {
+                background: `linear-gradient(135deg, ${ctaFrom} 0%, ${ctaTo} 55%, ${ctaFrom} 100%)`,
+              }
+            : undefined
+        }
       >
         發起唱歌需求
       </Link>
