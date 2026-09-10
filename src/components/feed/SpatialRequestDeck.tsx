@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as R
 import Link from "next/link";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { AVATAR_PRESETS } from "@/lib/constants";
-import { avatarPreset } from "@/lib/format";
+import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
 import { formatDateTime, hoursUntil } from "@/lib/time";
 import type { RequestCardData } from "@/lib/types";
 
@@ -280,7 +280,8 @@ function DeckCard({
   onSelect: () => void;
   onActiveClick: (e: { preventDefault: () => void }) => void;
 }) {
-  const preset = avatarPreset(item.initiator.avatar_url);
+  const preset = avatarPresetOrFallback(item.initiator.avatar_url);
+  const photo = isPhotoAvatar(item.initiator.avatar_url) ? item.initiator.avatar_url : null;
   const soon = hoursUntil(item.sing_at) > 0 && hoursUntil(item.sing_at) <= 3;
   const note = item.note?.replace(/^「|」$/g, "").trim();
 
@@ -310,7 +311,9 @@ function DeckCard({
           className="relative h-full w-full overflow-hidden text-white"
           style={{
             borderRadius: 36,
-            background: `linear-gradient(165deg, ${preset.from} 0%, ${preset.to} 58%, #1a1040 100%)`,
+            background: photo
+              ? "#12081f"
+              : `linear-gradient(165deg, ${preset.from} 0%, ${preset.to} 58%, #1a1040 100%)`,
             boxShadow: active
               ? "0 28px 70px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.12)"
               : "0 12px 32px rgba(0,0,0,0.22)",
@@ -319,20 +322,25 @@ function DeckCard({
             transition: `filter ${MOVE_MS}ms ${EASE}, box-shadow ${MOVE_MS}ms ${EASE}, opacity ${MOVE_MS}ms ${EASE}`,
           }}
         >
-          <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
-            <span
-              style={{
-                fontSize: active ? 86 : 64,
-                lineHeight: 1,
-                opacity: 0.92,
-                transition: `font-size ${MOVE_MS}ms ${EASE}`,
-              }}
-            >
-              {preset.emoji}
-            </span>
-          </div>
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center" aria-hidden>
+              <span
+                style={{
+                  fontSize: active ? 86 : 64,
+                  lineHeight: 1,
+                  opacity: 0.92,
+                  transition: `font-size ${MOVE_MS}ms ${EASE}`,
+                }}
+              >
+                {preset.emoji}
+              </span>
+            </div>
+          )}
           <div
-            className="absolute inset-x-0 bottom-0 px-5 pb-5 pt-16"
+            className="absolute inset-x-0 bottom-0 z-10 px-5 pb-5 pt-16"
             style={{
               background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(16,10,28,0.82) 72%)",
             }}

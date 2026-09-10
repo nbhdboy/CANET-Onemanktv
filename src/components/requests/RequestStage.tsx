@@ -7,7 +7,8 @@ import { CancelRequestButton } from "@/components/requests/CancelRequestButton";
 import { SafetyActions } from "@/components/safety/SafetyActions";
 import { Stars } from "@/components/ui/Stars";
 import { PREFERENCE_OPTIONS, heroByAge } from "@/lib/constants";
-import { avatarPreset, durationLabel, formatTwd } from "@/lib/format";
+import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { durationLabel, formatTwd } from "@/lib/format";
 import { formatClock, formatDateTime, relativeFromNow } from "@/lib/time";
 import type { RequestCardData, ReviewRecord } from "@/lib/types";
 
@@ -27,7 +28,8 @@ export function RequestStage({
   reviews: ReviewRecord[];
 }) {
   const hero = heroByAge(item.age_band);
-  const preset = avatarPreset(item.initiator.avatar_url);
+  const preset = avatarPresetOrFallback(item.initiator.avatar_url);
+  const photo = isPhotoAvatar(item.initiator.avatar_url) ? item.initiator.avatar_url : null;
   const note = item.note?.replace(/^「|」$/g, "").trim();
   const split =
     item.estimated_total_cost_2p != null
@@ -104,6 +106,7 @@ export function RequestStage({
               from={preset.from}
               to={preset.to}
               emoji={preset.emoji}
+              imageUrl={photo}
               kicker="K歌 +1"
               title={item.initiator.nickname}
               sub={`${item.age_band ?? hero.age} 歲場`}
@@ -249,6 +252,7 @@ function InfoDisc({
   from,
   to,
   emoji,
+  imageUrl,
   kicker,
   title,
   sub,
@@ -258,6 +262,7 @@ function InfoDisc({
   from: string;
   to: string;
   emoji?: string;
+  imageUrl?: string | null;
   kicker: string;
   title: string;
   sub: string;
@@ -265,24 +270,40 @@ function InfoDisc({
   const dim = size === "lg" ? "h-[240px] w-[240px] sm:h-[300px] sm:w-[300px] lg:h-[340px] lg:w-[340px]" : "h-[132px] w-[132px] lg:h-[156px] lg:w-[156px]";
   return (
     <div
-      className={`flex flex-col items-center justify-center overflow-hidden rounded-full text-center text-white ${dim} ${className ?? ""}`}
+      className={`relative flex flex-col items-center justify-center overflow-hidden rounded-full text-center text-white ${dim} ${className ?? ""}`}
       style={{
-        background: `linear-gradient(165deg, ${from} 0%, ${to} 62%, #12081f 100%)`,
+        background: imageUrl
+          ? "#12081f"
+          : `linear-gradient(165deg, ${from} 0%, ${to} 62%, #12081f 100%)`,
         boxShadow: "0 22px 50px rgba(0,0,0,0.28)",
       }}
     >
-      {emoji ? (
-        <span className={size === "lg" ? "text-6xl" : "text-3xl"} aria-hidden>
-          {emoji}
-        </span>
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
       ) : null}
-      <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70">
-        {kicker}
-      </p>
-      <p className={`mt-1 font-bold leading-tight ${size === "lg" ? "text-xl" : "text-sm"}`}>
-        {title}
-      </p>
-      <p className="mt-0.5 px-3 text-[11px] text-white/80">{sub}</p>
+      <div
+        className={`relative z-10 flex h-full w-full flex-col items-center justify-center ${
+          imageUrl ? "bg-gradient-to-b from-black/35 via-black/20 to-black/55" : ""
+        }`}
+      >
+        {emoji && !imageUrl ? (
+          <span className={size === "lg" ? "text-6xl" : "text-3xl"} aria-hidden>
+            {emoji}
+          </span>
+        ) : null}
+        <p
+          className={`text-[10px] font-semibold uppercase tracking-[0.18em] text-white/70 ${
+            imageUrl ? "mt-10" : "mt-2"
+          }`}
+        >
+          {kicker}
+        </p>
+        <p className={`mt-1 font-bold leading-tight ${size === "lg" ? "text-xl" : "text-sm"}`}>
+          {title}
+        </p>
+        <p className="mt-0.5 px-3 text-[11px] text-white/80">{sub}</p>
+      </div>
     </div>
   );
 }
