@@ -4,7 +4,8 @@ import { getSession } from "@/lib/session";
 import { loadProfile } from "@/lib/app-data";
 import { listMyBlocks } from "@/lib/safety";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
-import { avatarPreset } from "@/lib/format";
+import { Avatar } from "@/components/ui/Avatar";
+import { avatarPresetOrFallback } from "@/lib/avatar";
 import {
   HERO_AGE_COOKIE,
   ageBandFromYears,
@@ -34,7 +35,7 @@ export default async function SafetyPage({
       ? ageBandFromYears(ageFromBirthYear(profile.birth_year_private))
       : null;
   const ageBand = fromQuery ?? fromCookie ?? fromProfile ?? 20;
-  const preset = avatarPreset(profile?.avatar_url);
+  const preset = avatarPresetOrFallback(profile?.avatar_url);
 
   return (
     <StagePage
@@ -78,15 +79,12 @@ export default async function SafetyPage({
           <p className="text-sm text-white/80">尚未封鎖任何人。</p>
         ) : (
           blocks.map((b) => {
-            const face = avatarPreset(b.avatar_url);
             return (
               <div
                 key={b.blocked_id}
                 className="flex min-h-12 items-center gap-3 border border-white/50 px-5 py-4"
               >
-                <span className="text-2xl" aria-hidden>
-                  {face.emoji}
-                </span>
+                <Avatar presetId={b.avatar_url} nickname={b.nickname} size={36} />
                 <p className="font-semibold">{b.nickname}</p>
               </div>
             );

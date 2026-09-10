@@ -29,6 +29,9 @@ export function ApplicantsBoard({
   const pending = applicants.filter((a) => a.application.status === "PENDING");
   const decided = applicants.filter((a) => a.application.status !== "PENDING");
   const preset = avatarPresetOrFallback(request.initiator.avatar_url);
+  const photo = isPhotoAvatar(request.initiator.avatar_url)
+    ? request.initiator.avatar_url
+    : null;
   const canDecide = request.status === "OPEN";
   const hero = heroByAge(ageBand);
 
@@ -58,6 +61,7 @@ export function ApplicantsBoard({
           }
           from={preset.from}
           to={preset.to}
+          imageUrl={photo}
         />
       }
     >

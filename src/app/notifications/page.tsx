@@ -5,7 +5,7 @@ import { loadNotifications, loadProfile, loadUnread } from "@/lib/app-data";
 import { markNotificationsReadAction } from "@/actions/admin";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
 import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton";
-import { avatarPreset } from "@/lib/format";
+import { avatarPresetOrFallback } from "@/lib/avatar";
 import { ageFromBirthYear, formatDateTime, relativeFromNow } from "@/lib/time";
 import {
   HERO_AGE_COOKIE,
@@ -36,7 +36,7 @@ export default async function NotificationsPage({
       ? ageBandFromYears(ageFromBirthYear(profile.birth_year_private))
       : null;
   const ageBand = fromQuery ?? fromCookie ?? fromProfile ?? 20;
-  const preset = avatarPreset(profile?.avatar_url);
+  const preset = avatarPresetOrFallback(profile?.avatar_url);
 
   return (
     <StagePage
