@@ -41,6 +41,7 @@ export default async function SettingsPage({
       ? ageBandFromYears(ageFromBirthYear(profile.birth_year_private))
       : null;
   const ageBand = fromQuery ?? fromCookie ?? fromProfile ?? 20;
+  const hero = heroByAge(ageBand);
   const preset = avatarPresetOrFallback(profile?.avatar_url);
   const photo = isPhotoAvatar(profile?.avatar_url) ? profile?.avatar_url : null;
 
@@ -48,7 +49,7 @@ export default async function SettingsPage({
     <StagePage
       ageBand={ageBand}
       watermark="設定"
-      kicker={`K歌 +1 · ${heroByAge(ageBand).label}設定`}
+      kicker={`K歌 +1 · ${hero.label}設定`}
       liveLabel="LIVE 名片"
       aside={
         <StageDisc
@@ -56,8 +57,10 @@ export default async function SettingsPage({
           badge="可改"
           title={profile?.nickname || "歌友"}
           sub="公開暱稱與頭像"
-          from={preset.from}
-          to={preset.to}
+          from={hero.ctaFrom}
+          to={hero.ctaTo}
+          glow={hero.glassGlow}
+          glowSoft={hero.glassGlowSoft}
           imageUrl={photo}
         />
       }

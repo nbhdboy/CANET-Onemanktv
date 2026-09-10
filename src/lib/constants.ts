@@ -82,6 +82,9 @@ export const HERO_IMAGES = [
     ctaFrom: "#E56A3D",
     ctaMid: "#F4845F",
     ctaTo: "#FFB090",
+    /** 玻璃圓盤內側光暈（隨年齡局變） */
+    glassGlow: "#F472B6",
+    glassGlowSoft: "#FB7185",
   },
   {
     age: 30,
@@ -94,6 +97,8 @@ export const HERO_IMAGES = [
     ctaFrom: "#3D8FE8",
     ctaMid: "#6EB5FF",
     ctaTo: "#A8D4FF",
+    glassGlow: "#818CF8",
+    glassGlowSoft: "#38BDF8",
   },
   {
     age: 40,
@@ -106,6 +111,8 @@ export const HERO_IMAGES = [
     ctaFrom: "#3F9A52",
     ctaMid: "#6BBF7A",
     ctaTo: "#A5E0B0",
+    glassGlow: "#34D399",
+    glassGlowSoft: "#A3E635",
   },
   {
     age: 50,
@@ -118,6 +125,8 @@ export const HERO_IMAGES = [
     ctaFrom: "#D45A9A",
     ctaMid: "#E882B4",
     ctaTo: "#F5B8D6",
+    glassGlow: "#F9A8D4",
+    glassGlowSoft: "#C084FC",
   },
 ] as const;
 

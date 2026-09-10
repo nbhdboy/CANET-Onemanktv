@@ -17,18 +17,15 @@ import type { NotificationRecord } from "@/lib/types";
 export function NotificationsBoard({
   ageBand,
   unread,
-  discFrom,
-  discTo,
   items,
 }: {
   ageBand: HeroAge;
   unread: number;
-  discFrom: string;
-  discTo: string;
   items: NotificationRecord[];
 }) {
   const router = useRouter();
   const [navLoading, setNavLoading] = useState(false);
+  const hero = heroByAge(ageBand);
 
   function openItem(n: NotificationRecord) {
     if (navLoading) return;
@@ -48,18 +45,19 @@ export function NotificationsBoard({
     <StagePage
       ageBand={ageBand}
       watermark="通知"
-      kicker={`K歌 +1 · ${heroByAge(ageBand).label}信箱`}
+      kicker={`K歌 +1 · ${hero.label}信箱`}
       liveLabel="LIVE 信箱"
       aside={
         <StageDisc
-          emoji="🎤"
+          emoji="🎵"
           badge={unread ? "未讀" : "已讀完"}
           title={unread ? String(unread).padStart(2, "0") : "00"}
           sub={unread ? "則還沒看" : "目前沒有未讀"}
-          from={discFrom}
-          to={discTo}
-          imageUrl="/stage/notify-3d.png"
-          imageFit="contain"
+          from={hero.ctaFrom}
+          to={hero.ctaTo}
+          glow={hero.glassGlow}
+          glowSoft={hero.glassGlowSoft}
+          glyph="music"
         />
       }
     >

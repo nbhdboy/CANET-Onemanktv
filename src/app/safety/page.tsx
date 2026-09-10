@@ -6,7 +6,6 @@ import { listMyBlocks } from "@/lib/safety";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
 import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
 import { Avatar } from "@/components/ui/Avatar";
-import { avatarPresetOrFallback } from "@/lib/avatar";
 import {
   HERO_AGE_COOKIE,
   SUPPORT_EMAIL,
@@ -37,13 +36,13 @@ export default async function SafetyPage({
       ? ageBandFromYears(ageFromBirthYear(profile.birth_year_private))
       : null;
   const ageBand = fromQuery ?? fromCookie ?? fromProfile ?? 20;
-  const preset = avatarPresetOrFallback(profile?.avatar_url);
+  const hero = heroByAge(ageBand);
 
   return (
     <StagePage
       ageBand={ageBand}
       watermark="安全"
-      kicker={`K歌 +1 · ${heroByAge(ageBand).label}護場`}
+      kicker={`K歌 +1 · ${hero.label}護場`}
       liveLabel="LIVE 護場"
       aside={
         <StageDisc
@@ -51,10 +50,11 @@ export default async function SafetyPage({
           badge={blocks.length ? "有封鎖" : "平安"}
           title="安全中心"
           sub={blocks.length ? `已封鎖 ${blocks.length} 人` : "尚未封鎖任何人"}
-          from={preset.from}
-          to={preset.to}
-          imageUrl="/stage/safety-3d.png"
-          imageFit="contain"
+          from={hero.ctaFrom}
+          to={hero.ctaTo}
+          glow={hero.glassGlow}
+          glowSoft={hero.glassGlowSoft}
+          glyph="shield"
         />
       }
     >

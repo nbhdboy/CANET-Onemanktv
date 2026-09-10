@@ -39,12 +39,13 @@ export function PublicProfileBoard({
   const photo = isPhotoAvatar(avatarUrl) ? avatarUrl : null;
   const displayName = nickname || "歌友";
   const isNew = ratingCount === 0;
+  const hero = heroByAge(ageBand);
 
   return (
     <StagePage
       ageBand={ageBand}
       watermark="歌友"
-      kicker={`K歌 +1 · ${heroByAge(ageBand).label}名片`}
+      kicker={`K歌 +1 · ${hero.label}名片`}
       liveLabel="LIVE 名片"
       backHref={backHref}
       backLabel="返回"
@@ -54,8 +55,10 @@ export function PublicProfileBoard({
           badge={isNew ? "新歌友" : "已認證唱"}
           title={displayName}
           sub={accountAge}
-          from={preset.from}
-          to={preset.to}
+          from={hero.ctaFrom}
+          to={hero.ctaTo}
+          glow={hero.glassGlow}
+          glowSoft={hero.glassGlowSoft}
           imageUrl={photo}
         />
       }

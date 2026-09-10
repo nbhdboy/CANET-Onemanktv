@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { loadNotifications, loadProfile, loadUnread } from "@/lib/app-data";
 import { NotificationsBoard } from "@/components/notifications/NotificationsBoard";
-import { avatarPresetOrFallback } from "@/lib/avatar";
 import { ageFromBirthYear } from "@/lib/time";
 import {
   HERO_AGE_COOKIE,
@@ -33,14 +32,11 @@ export default async function NotificationsPage({
       ? ageBandFromYears(ageFromBirthYear(profile.birth_year_private))
       : null;
   const ageBand = fromQuery ?? fromCookie ?? fromProfile ?? 20;
-  const preset = avatarPresetOrFallback(profile?.avatar_url);
 
   return (
     <NotificationsBoard
       ageBand={ageBand}
       unread={unread}
-      discFrom={preset.from}
-      discTo={preset.to}
       items={items}
     />
   );

@@ -28,7 +28,6 @@ export function ApplicantsBoard({
   const [loading, setLoading] = useState(false);
   const pending = applicants.filter((a) => a.application.status === "PENDING");
   const decided = applicants.filter((a) => a.application.status !== "PENDING");
-  const preset = avatarPresetOrFallback(request.initiator.avatar_url);
   const photo = isPhotoAvatar(request.initiator.avatar_url)
     ? request.initiator.avatar_url
     : null;
@@ -59,8 +58,10 @@ export function ApplicantsBoard({
                 ? "還沒有人申請"
                 : "這場已不再開放"
           }
-          from={preset.from}
-          to={preset.to}
+          from={hero.ctaFrom}
+          to={hero.ctaTo}
+          glow={hero.glassGlow}
+          glowSoft={hero.glassGlowSoft}
           imageUrl={photo}
         />
       }
