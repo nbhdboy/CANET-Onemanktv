@@ -52,9 +52,10 @@ export function toPublicProfile(row: {
 }
 
 export function avatarPreset(id: string | null | undefined) {
-  return (
-    AVATAR_PRESETS.find((a) => a.id === id) ?? AVATAR_PRESETS[0]
-  );
+  if (id && (/^https?:\/\//i.test(id) || id.startsWith("/uploads/"))) {
+    return AVATAR_PRESETS[0];
+  }
+  return AVATAR_PRESETS.find((a) => a.id === id) ?? AVATAR_PRESETS[0];
 }
 
 export function formatTwd(n: number) {

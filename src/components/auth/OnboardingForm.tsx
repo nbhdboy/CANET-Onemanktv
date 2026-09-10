@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { onboardingAction } from "@/actions/profile";
 import { AVATAR_PRESETS } from "@/lib/constants";
+import { AvatarPicker } from "@/components/ui/AvatarPicker";
 import type { ActionResult } from "@/lib/types";
 
 const init: ActionResult = { ok: false };
@@ -15,23 +16,7 @@ export function OnboardingForm() {
   return (
     <form action={formAction} className="space-y-5">
       <input type="hidden" name="avatar" value={avatar} />
-      <fieldset className="space-y-2">
-        <legend className="text-sm font-medium">選一個頭像</legend>
-        <div className="flex flex-wrap gap-2">
-          {AVATAR_PRESETS.map((a) => (
-            <button
-              key={a.id}
-              type="button"
-              onClick={() => setAvatar(a.id)}
-              className={`w-12 h-12 rounded-full text-xl ${avatar === a.id ? "ring-2 ring-purple-700" : ""}`}
-              style={{ background: `linear-gradient(135deg, ${a.from}, ${a.to})` }}
-              aria-label={a.id}
-            >
-              {a.emoji}
-            </button>
-          ))}
-        </div>
-      </fieldset>
+      <AvatarPicker value={avatar} onChange={setAvatar} />
       <Field name="nickname" label="公開暱稱" required />
       <Field name="realName" label="真實姓名（僅自己可見）" required />
       <label className="block space-y-1">

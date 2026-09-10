@@ -88,11 +88,24 @@ export async function updatePublicProfileApp(
   userId: string,
   fields: { nickname: string; avatar_url: string },
 ) {
+  const previous = await loadProfile(userId);
   if (useSupabaseApp()) {
     await updateSupabaseProfile(userId, fields);
-    return;
+  } else {
+    updateProfileFields(userId, fields);
   }
-  updateProfileFields(userId, fields);
+  const prevUrl = previous?.avatar_url;
+  if (
+    prevUrl &&
+    prevUrl !== fields.avatar_url &&
+    (prevUrl.startsWith("http") || prevUrl.startsWith("/uploads/"))
+  ) {
+    const { deleteAvatarImage } = await import("@/lib/avatars/store");
+    const { isManagedAvatarUrl } = await import("@/lib/avatar");
+    if (isManagedAvatarUrl(prevUrl)) {
+      await deleteAvatarImage(prevUrl).catch(() => undefined);
+    }
+  }
 }
 
 export async function completeOnboardingApp(input: {

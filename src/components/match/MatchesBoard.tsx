@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
+import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
 import { heroByAge, type HeroAge } from "@/lib/constants";
-import { avatarPreset } from "@/lib/format";
 import { formatDateTime } from "@/lib/time";
 
 type Row = Record<string, unknown>;
@@ -33,7 +33,8 @@ export function MatchesBoard({
   const [navLoading, setNavLoading] = useState(false);
   const router = useRouter();
   const hero = heroByAge(ageBand);
-  const preset = avatarPreset(avatarUrl);
+  const preset = avatarPresetOrFallback(avatarUrl);
+  const photo = isPhotoAvatar(avatarUrl) ? avatarUrl : null;
   const live = pendingRequests.length + waitingReply.length + waitingPay.length + matched.length;
   const badge =
     waitingPay.length > 0
@@ -101,20 +102,30 @@ export function MatchesBoard({
                   className="relative flex h-full flex-col overflow-hidden text-white"
                   style={{
                     borderRadius: 36,
-                    background: `linear-gradient(165deg, ${preset.from} 0%, ${preset.to} 58%, #1a1040 100%)`,
+                    background: photo
+                      ? "#12081f"
+                      : `linear-gradient(165deg, ${preset.from} 0%, ${preset.to} 58%, #1a1040 100%)`,
                     boxShadow: "0 28px 70px rgba(0,0,0,0.32), 0 0 0 1px rgba(255,255,255,0.12)",
                   }}
                 >
-                  <p className="absolute left-4 top-4 rounded-full border border-white/40 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] text-white/90">
+                  {photo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={photo}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover opacity-55"
+                    />
+                  ) : null}
+                  <p className="absolute left-4 top-4 z-10 rounded-full border border-white/40 px-3 py-1 text-[10px] font-semibold tracking-[0.16em] text-white/90">
                     {badge}
                   </p>
-                  <div className="flex flex-1 flex-col justify-center px-7 pt-10">
+                  <div className="relative z-10 flex flex-1 flex-col justify-center px-7 pt-10">
                     <Stat n={pendingRequests.length} label="收到的申請" />
                     <Stat n={waitingPay.length} label="等待付款" />
                     <Stat n={matched.length} label="已媒合" />
                   </div>
                   <div
-                    className="px-5 pb-6 pt-8"
+                    className="relative z-10 px-5 pb-6 pt-8"
                     style={{
                       background: "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(16,10,28,0.84) 72%)",
                     }}

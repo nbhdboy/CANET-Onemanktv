@@ -5,7 +5,8 @@ import Link from "next/link";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
 import { ApplicantActions } from "@/components/match/ApplicantActions";
 import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
-import { avatarPreset, durationLabel } from "@/lib/format";
+import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
+import { durationLabel } from "@/lib/format";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { formatDateTime } from "@/lib/time";
 import type { MatchApplication, PublicProfile, RequestCardData } from "@/lib/types";
@@ -27,7 +28,7 @@ export function ApplicantsBoard({
   const [loading, setLoading] = useState(false);
   const pending = applicants.filter((a) => a.application.status === "PENDING");
   const decided = applicants.filter((a) => a.application.status !== "PENDING");
-  const preset = avatarPreset(request.initiator.avatar_url);
+  const preset = avatarPresetOrFallback(request.initiator.avatar_url);
   const canDecide = request.status === "OPEN";
   const hero = heroByAge(ageBand);
 
@@ -127,7 +128,8 @@ function ApplicantCard({
   applicationId: string;
   onLoadingChange: (loading: boolean) => void;
 }) {
-  const preset = avatarPreset(profile.avatar_url);
+  const preset = avatarPresetOrFallback(profile.avatar_url);
+  const photo = isPhotoAvatar(profile.avatar_url) ? profile.avatar_url : null;
   const rating =
     profile.rating_count === 0
       ? "🌱 新歌友"
@@ -137,14 +139,21 @@ function ApplicantCard({
     <article className="border border-white/50 px-5 py-5 text-white">
       <div className="flex items-start gap-4">
         <div
-          className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl"
+          className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl"
           style={{
-            background: `linear-gradient(165deg, ${preset.from}, ${preset.to})`,
+            background: photo
+              ? undefined
+              : `linear-gradient(165deg, ${preset.from}, ${preset.to})`,
             boxShadow: "0 0 0 1px rgba(255,255,255,0.2)",
           }}
           aria-hidden
         >
-          {preset.emoji}
+          {photo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photo} alt="" className="h-full w-full object-cover" />
+          ) : (
+            preset.emoji
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline justify-between gap-2">

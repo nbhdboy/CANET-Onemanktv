@@ -37,6 +37,9 @@ yarn-error.log*
 # local sqlite
 /data
 
+# local avatar uploads
+/public/uploads
+
 # vercel
 .vercel
 

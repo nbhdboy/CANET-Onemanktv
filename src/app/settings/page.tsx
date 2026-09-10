@@ -5,7 +5,7 @@ import { loadContacts, loadProfile } from "@/lib/app-data";
 import { SettingsForms } from "@/components/settings/SettingsForms";
 import { SavedCardSettings } from "@/components/settings/SavedCardSettings";
 import { StageDisc, StagePage, StageTitle, StageTrack } from "@/components/layout/StagePage";
-import { avatarPreset } from "@/lib/format";
+import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
 import {
   HERO_AGE_COOKIE,
   ageBandFromYears,
@@ -40,7 +40,8 @@ export default async function SettingsPage({
       ? ageBandFromYears(ageFromBirthYear(profile.birth_year_private))
       : null;
   const ageBand = fromQuery ?? fromCookie ?? fromProfile ?? 20;
-  const preset = avatarPreset(profile?.avatar_url);
+  const preset = avatarPresetOrFallback(profile?.avatar_url);
+  const photo = isPhotoAvatar(profile?.avatar_url) ? profile?.avatar_url : null;
 
   return (
     <StagePage
@@ -56,6 +57,7 @@ export default async function SettingsPage({
           sub="公開暱稱與頭像"
           from={preset.from}
           to={preset.to}
+          imageUrl={photo}
         />
       }
     >

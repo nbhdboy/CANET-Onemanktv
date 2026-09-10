@@ -1,4 +1,4 @@
-import { avatarPreset } from "@/lib/format";
+import { avatarPresetOrFallback, isPhotoAvatar } from "@/lib/avatar";
 
 export function Avatar({
   presetId,
@@ -9,10 +9,24 @@ export function Avatar({
   nickname?: string | null;
   size?: number;
 }) {
-  const p = avatarPreset(presetId);
+  if (isPhotoAvatar(presetId)) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={presetId!}
+        alt={nickname || "頭像"}
+        width={size}
+        height={size}
+        className="inline-block shrink-0 rounded-full object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
+
+  const p = avatarPresetOrFallback(presetId);
   return (
     <span
-      className="inline-flex items-center justify-center rounded-full text-white shrink-0"
+      className="inline-flex shrink-0 items-center justify-center rounded-full text-white"
       style={{
         width: size,
         height: size,

@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { updateContactsAction, updatePublicProfileAction } from "@/actions/profile";
-import { AVATAR_PRESETS } from "@/lib/constants";
+import { AvatarPicker } from "@/components/ui/AvatarPicker";
 import { StageTrack, ghostBtn } from "@/components/layout/StagePage";
 import type { ActionResult } from "@/lib/types";
 
@@ -26,6 +26,7 @@ export function SettingsForms({
 }) {
   const [p, pAction, pPending] = useActionState(updatePublicProfileAction, init);
   const [c, cAction, cPending] = useActionState(updateContactsAction, init);
+  const [avatarValue, setAvatarValue] = useState(avatar || "mic-purple");
   const [line, setLine] = useState(lineId);
   const [ig, setIg] = useState(instagram);
   const [th, setTh] = useState(threads);
@@ -36,6 +37,10 @@ export function SettingsForms({
     setTh(threads);
   }, [lineId, instagram, threads]);
 
+  useEffect(() => {
+    setAvatarValue(avatar || "mic-purple");
+  }, [avatar]);
+
   return (
     <div className="space-y-8" style={{ colorScheme: "light" }}>
       <StageTrack n="01" title="公開資料">
@@ -44,16 +49,8 @@ export function SettingsForms({
             <span className="text-sm font-medium text-white">暱稱</span>
             <input name="nickname" defaultValue={nickname} className={field} />
           </label>
-          <label className="block space-y-1">
-            <span className="text-sm font-medium text-white">頭像</span>
-            <select name="avatar" defaultValue={avatar} className={field}>
-              {AVATAR_PRESETS.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.emoji} {a.id}
-                </option>
-              ))}
-            </select>
-          </label>
+          <input type="hidden" name="avatar" value={avatarValue} />
+          <AvatarPicker value={avatarValue} onChange={setAvatarValue} tone="onDark" />
           {p.error ? <p className="text-sm text-amber-100">{p.error}</p> : null}
           {p.ok ? <p className="text-sm text-white">已儲存。</p> : null}
           <button type="submit" disabled={pPending} className={ghostBtn}>
