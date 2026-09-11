@@ -255,39 +255,32 @@ textarea {
   outline: none;
 }
 
-.compose-glass-time {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.35rem;
-  width: min(100%, 11.75rem);
-  min-width: 0;
-  max-width: 100%;
-}
-
-/* 外層 slot 擋住 iOS Safari select 的固有最小寬度，避免整列被撐出 glass */
-.compose-glass-time-slot {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  border-radius: 1rem;
-}
-
-.compose-glass-time-slot > .compose-glass-time-field {
-  display: block;
-  min-width: 0;
-  max-width: 100%;
+.compose-glass-time-wrap {
+  position: relative;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.compose-glass-time {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   box-sizing: border-box;
-  -webkit-appearance: none;
-  appearance: none;
-  background-color: rgba(255, 255, 255, 0.96);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.25L6 7.75L9.5 4.25' stroke='%231a1040' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.55rem center;
-  background-size: 0.7rem;
-  padding-inline: 0.55rem 1.55rem;
-  text-align: center;
+}
+
+.compose-glass-time > .compose-glass-time-field {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 .compose-glass-time-sep {
@@ -295,9 +288,50 @@ textarea {
   font-weight: 700;
   font-size: 1.05rem;
   line-height: 1;
-  flex-shrink: 0;
+  flex: 0 0 auto;
   width: 0.7rem;
   text-align: center;
+}
+
+.compose-glass-time-panel {
+  margin-top: 0.45rem;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.35rem;
+  max-height: 12.5rem;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.65rem;
+  border-radius: 1.1rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+
+.compose-glass-time-option {
+  display: inline-flex;
+  height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0.75rem;
+  background: transparent;
+  color: #1a1040;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.compose-glass-time-option.is-selected,
+.compose-glass-time-option:hover {
+  background: rgba(26, 16, 64, 0.08);
+}
+
+.compose-glass-time-option.is-selected {
+  font-weight: 700;
 }
 
 .compose-glass-chip {
