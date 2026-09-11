@@ -88,6 +88,9 @@ export function RequestStage({
         {item.status === "EXPIRED" ? (
           <p className="stage-copy text-sm font-medium text-white/95">這場歌局已經過時間囉。</p>
         ) : null}
+        {item.status === "CANCELLED" ? (
+          <p className="stage-copy text-sm font-medium text-white/95">這場歌局已取消。</p>
+        ) : null}
 
         <div className="grid items-center gap-12 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
           <div className="relative mx-auto flex w-full max-w-[560px] items-center justify-center overflow-x-clip py-6">
@@ -171,17 +174,30 @@ export function RequestStage({
             ) : null}
 
             {open ? (
-              <div className="mt-8 w-full max-w-xs">
+              <div className="mt-8 w-full max-w-xs space-y-3">
                 {isOwner ? (
-                  <Link
-                    href={`/requests/${item.id}/applicants`}
-                    className="flex min-h-12 w-full items-center justify-center border border-white text-sm font-semibold tracking-[0.18em] text-white transition-colors hover:bg-white hover:text-[#1a1040]"
-                  >
-                    查看申請者
-                  </Link>
+                  <>
+                    <Link
+                      href={`/requests/${item.id}/applicants`}
+                      className="flex min-h-12 w-full items-center justify-center border border-white text-sm font-semibold tracking-[0.18em] text-white transition-colors hover:bg-white hover:text-[#1a1040]"
+                    >
+                      查看申請者
+                    </Link>
+                    <CancelRequestButton requestId={item.id} tone="onColor" />
+                  </>
                 ) : (
                   <ApplyButton requestId={item.id} variant="ghost" />
                 )}
+              </div>
+            ) : null}
+
+            {isOwner && item.status === "CANCELLED" ? (
+              <div className="mt-8 w-full max-w-xs">
+                <CancelRequestButton
+                  requestId={item.id}
+                  tone="onColor"
+                  initiallyCancelled
+                />
               </div>
             ) : null}
 
@@ -227,7 +243,6 @@ export function RequestStage({
                 </p>
               ))}
             </div>
-            {isOwner && open ? <CancelRequestButton requestId={item.id} tone="onColor" /> : null}
             {!isOwner && sessionId ? (
               <SafetyActions
                 userId={item.initiator.id}
