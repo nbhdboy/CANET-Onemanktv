@@ -259,14 +259,22 @@ textarea {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 0.45rem;
-  width: 100%;
+  gap: 0.35rem;
+  width: min(100%, 11.75rem);
   min-width: 0;
   max-width: 100%;
 }
 
-/* iOS Safari 原生 select 有過大的 min-content 寬度，會把時分列擠出 glass 右緣 */
-.compose-glass-time > .compose-glass-time-field {
+/* 外層 slot 擋住 iOS Safari select 的固有最小寬度，避免整列被撐出 glass */
+.compose-glass-time-slot {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.compose-glass-time-slot > .compose-glass-time-field {
+  display: block;
   min-width: 0;
   max-width: 100%;
   width: 100%;
@@ -276,9 +284,9 @@ textarea {
   background-color: rgba(255, 255, 255, 0.96);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.25L6 7.75L9.5 4.25' stroke='%231a1040' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.7rem center;
-  background-size: 0.75rem;
-  padding-inline: 0.85rem 1.85rem;
+  background-position: right 0.55rem center;
+  background-size: 0.7rem;
+  padding-inline: 0.55rem 1.55rem;
   text-align: center;
 }
 
@@ -288,6 +296,8 @@ textarea {
   font-size: 1.05rem;
   line-height: 1;
   flex-shrink: 0;
+  width: 0.7rem;
+  text-align: center;
 }
 
 .compose-glass-chip {

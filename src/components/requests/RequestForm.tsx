@@ -627,41 +627,45 @@ function GlassTimeSelect({
     <>
       <input type="hidden" name="time" value={value} />
       <div className="compose-glass-time">
-        <select
-          aria-label="開唱時間（時）"
-          required={required}
-          value={hour}
-          onChange={(e) => setPart(e.target.value, snappedMinute || "00")}
-          className={timeField}
-        >
-          <option value="" disabled>
-            --
-          </option>
-          {TIME_HOURS.map((h) => (
-            <option key={h} value={h}>
-              {h}
+        <div className="compose-glass-time-slot">
+          <select
+            aria-label="開唱時間（時）"
+            required={required}
+            value={hour}
+            onChange={(e) => setPart(e.target.value, snappedMinute || "00")}
+            className={timeField}
+          >
+            <option value="" disabled>
+              --
             </option>
-          ))}
-        </select>
+            {TIME_HOURS.map((h) => (
+              <option key={h} value={h}>
+                {h}
+              </option>
+            ))}
+          </select>
+        </div>
         <span className="compose-glass-time-sep" aria-hidden>
           :
         </span>
-        <select
-          aria-label="開唱時間（分）"
-          required={required}
-          value={snappedMinute}
-          onChange={(e) => setPart(hour || "00", e.target.value)}
-          className={timeField}
-        >
-          <option value="" disabled>
-            --
-          </option>
-          {TIME_MINUTES.map((m) => (
-            <option key={m} value={m}>
-              {m}
+        <div className="compose-glass-time-slot">
+          <select
+            aria-label="開唱時間（分）"
+            required={required}
+            value={snappedMinute}
+            onChange={(e) => setPart(hour || "00", e.target.value)}
+            className={timeField}
+          >
+            <option value="" disabled>
+              --
             </option>
-          ))}
-        </select>
+            {TIME_MINUTES.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </>
   );
