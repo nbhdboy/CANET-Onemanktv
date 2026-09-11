@@ -12,7 +12,7 @@ export default function manifest(): MetadataRoute.Manifest {
     lang: "zh-Hant",
     icons: [
       { src: "/icon.jpg", sizes: "512x512", type: "image/jpeg", purpose: "any" },
-      { src: "/brand/ktv-plus-1.jpg", sizes: "1024x1024", type: "image/jpeg", purpose: "any" },
+      { src: "/heroes/age-20.png", sizes: "1080x1440", type: "image/png", purpose: "any" },
     ],
   };
 }
