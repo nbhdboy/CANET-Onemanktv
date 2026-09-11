@@ -151,7 +151,7 @@ export const HERO_IMAGES = [
   {
     age: 20,
     minAge: 18,
-    maxAge: 24,
+    maxAge: 29,
     label: "20 歲",
     src: "/heroes/age-20.png?v=3",
     bg: "#F4845F",
@@ -165,8 +165,8 @@ export const HERO_IMAGES = [
   },
   {
     age: 30,
-    minAge: 25,
-    maxAge: 34,
+    minAge: 30,
+    maxAge: 39,
     label: "30 歲",
     src: "/heroes/age-30.png?v=4",
     bg: "#6EB5FF",
@@ -179,8 +179,8 @@ export const HERO_IMAGES = [
   },
   {
     age: 40,
-    minAge: 35,
-    maxAge: 44,
+    minAge: 40,
+    maxAge: 49,
     label: "40 歲",
     src: "/heroes/age-40.png?v=4",
     bg: "#6BBF7A",
@@ -193,7 +193,7 @@ export const HERO_IMAGES = [
   },
   {
     age: 50,
-    minAge: 45,
+    minAge: 50,
     maxAge: 80,
     label: "50 歲",
     src: "/heroes/age-50.png?v=4",
