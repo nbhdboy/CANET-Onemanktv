@@ -175,8 +175,8 @@ export function ToonHero({
         </div>
 
         <div
-          className="absolute bottom-6 left-4 sm:bottom-20 sm:left-24"
-          style={{ zIndex: 60, maxWidth: 320 }}
+          className="absolute bottom-24 left-4 sm:bottom-20 sm:left-24"
+          style={{ zIndex: 30, maxWidth: 320 }}
         >
           <p
             className="mb-2 sm:mb-3 text-base sm:text-[22px] font-bold uppercase text-white"
@@ -212,9 +212,9 @@ export function ToonHero({
 
         <Link
           href={`/requests/new?age=${hero.age}`}
-          className="absolute bottom-6 right-4 sm:bottom-20 sm:right-10 flex items-center gap-2 text-white no-underline"
+          className="absolute bottom-24 right-4 sm:bottom-20 sm:right-10 flex items-center gap-2 text-white no-underline"
           style={{
-            zIndex: 60,
+            zIndex: 30,
             fontFamily: "Anton, sans-serif",
             fontSize: "clamp(20px, 4vw, 56px)",
             fontWeight: 400,
