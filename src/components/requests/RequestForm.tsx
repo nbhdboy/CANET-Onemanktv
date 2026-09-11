@@ -17,6 +17,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { createRequestAction } from "@/actions/match";
+import { GlassMenuSelect } from "@/components/requests/GlassMenuSelect";
 import {
   DURATION_OPTIONS,
   MUSIC_GENRES,
@@ -394,6 +395,7 @@ export function RequestForm({
                   <div className="grid gap-3 sm:grid-cols-3">
                     <IconField icon={<CalendarDays size={16} />} label="日期">
                       <GlassDateSelect
+                        accent={accent}
                         name="date"
                         required
                         value={date}
@@ -401,21 +403,26 @@ export function RequestForm({
                       />
                     </IconField>
                     <IconField icon={<Clock3 size={16} />} label="開唱時間">
-                      <GlassTimeSelect value={time} onChange={setTime} required />
+                      <GlassTimeSelect
+                        accent={accent}
+                        value={time}
+                        onChange={setTime}
+                        required
+                      />
                     </IconField>
                     <IconField icon={<Music2 size={16} />} label="預計唱多久">
-                      <select
+                      <GlassMenuSelect
                         name="duration"
+                        accent={accent}
                         value={duration}
-                        onChange={(e) => setDuration(e.target.value)}
-                        className={field}
-                      >
-                        {DURATION_OPTIONS.map((d) => (
-                          <option key={d.value} value={d.value}>
-                            {d.label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={setDuration}
+                        placeholder="選擇時長"
+                        aria-label="預計唱多久"
+                        options={DURATION_OPTIONS.map((d) => ({
+                          value: String(d.value),
+                          label: d.label,
+                        }))}
+                      />
                     </IconField>
                   </div>
                 </Track>
@@ -628,40 +635,34 @@ function GlassDateSelect({
   onChange,
   name,
   required,
+  accent,
 }: {
   value: string;
   onChange: (next: string) => void;
   name: string;
   required?: boolean;
+  accent: string;
 }) {
   const options = useMemo(() => {
     if (!value || DATE_OPTIONS.some((opt) => opt.value === value)) return DATE_OPTIONS;
     const parts = value.split("-");
     const month = Number(parts[1]);
     const day = Number(parts[2]);
-    const label =
-      month && day ? `${month}/${day}` : value;
+    const label = month && day ? `${month}/${day}` : value;
     return [{ value, label }, ...DATE_OPTIONS];
   }, [value]);
 
   return (
-    <select
+    <GlassMenuSelect
       name={name}
-      required={required}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={field}
+      onChange={onChange}
+      options={options}
+      placeholder="選擇日期"
+      required={required}
+      accent={accent}
       aria-label="日期"
-    >
-      <option value="" disabled>
-        選擇日期
-      </option>
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
+    />
   );
 }
 
@@ -669,10 +670,12 @@ function GlassTimeSelect({
   value,
   onChange,
   required,
+  accent,
 }: {
   value: string;
   onChange: (next: string) => void;
   required?: boolean;
+  accent: string;
 }) {
   const [hour = "", minute = ""] = value ? value.split(":") : ["", ""];
   const snappedMinute = TIME_MINUTES.includes(minute) ? minute : "";
@@ -687,46 +690,43 @@ function GlassTimeSelect({
 
   return (
     <>
-      <input type="hidden" name="time" value={value} />
+      <input
+        type="text"
+        name="time"
+        value={value}
+        required={required}
+        readOnly
+        tabIndex={-1}
+        aria-hidden
+        className="sr-only"
+      />
       <div className="compose-glass-time">
         <div className="compose-glass-time-slot">
-          <select
-            aria-label="開唱時間（時）"
-            required={required}
+          <GlassMenuSelect
             value={hour}
-            onChange={(e) => setPart(e.target.value, snappedMinute || "00")}
-            className={field}
-          >
-            <option value="" disabled>
-              幾點
-            </option>
-            {TIME_HOURS.map((h) => (
-              <option key={h} value={h}>
-                {h}
-              </option>
-            ))}
-          </select>
+            onChange={(next) => setPart(next, snappedMinute || "00")}
+            options={TIME_HOURS.map((h) => ({ value: h, label: h }))}
+            placeholder="時"
+            accent={accent}
+            compact
+            align="center"
+            aria-label="開唱時間（時）"
+          />
         </div>
         <span className="compose-glass-time-sep" aria-hidden>
           :
         </span>
         <div className="compose-glass-time-slot">
-          <select
-            aria-label="開唱時間（分）"
-            required={required}
+          <GlassMenuSelect
             value={snappedMinute}
-            onChange={(e) => setPart(hour || "00", e.target.value)}
-            className={field}
-          >
-            <option value="" disabled>
-              幾分
-            </option>
-            {TIME_MINUTES.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-          </select>
+            onChange={(next) => setPart(hour || "00", next)}
+            options={TIME_MINUTES.map((m) => ({ value: m, label: m }))}
+            placeholder="分"
+            accent={accent}
+            compact
+            align="center"
+            aria-label="開唱時間（分）"
+          />
         </div>
       </div>
     </>

@@ -260,7 +260,7 @@ textarea {
 
 .compose-glass-time {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.4rem;
   width: 100%;
   min-width: 0;
@@ -272,24 +272,180 @@ textarea {
   flex: 1 1 0;
   min-width: 0;
   max-width: 100%;
-  overflow: hidden;
-}
-
-.compose-glass-time-slot > .compose-glass-field {
-  min-width: 0;
-  max-width: 100%;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .compose-glass-time-sep {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.78);
   font-weight: 700;
   font-size: 1.05rem;
-  line-height: 1;
+  line-height: 3rem;
   flex: 0 0 auto;
   width: 0.7rem;
   text-align: center;
+}
+
+.compose-menu {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.compose-menu-trigger {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  height: 3rem;
+  padding: 0 0.95rem 0 1.05rem;
+  border: 0;
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(252, 249, 255, 0.96) 100%);
+  box-shadow:
+    0 10px 24px rgba(26, 16, 64, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  color: #1a1040;
+  font: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.compose-menu-trigger.is-center {
+  justify-content: center;
+  padding-inline: 0.55rem 0.45rem;
+  gap: 0.25rem;
+}
+
+.compose-menu-trigger.is-center .compose-menu-trigger-label {
+  flex: 0 1 auto;
+  text-align: center;
+}
+
+.compose-menu-trigger:hover {
+  box-shadow:
+    0 12px 28px rgba(26, 16, 64, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+.compose-menu.is-open > .compose-menu-trigger,
+.compose-menu-trigger:focus-visible {
+  outline: none;
+  box-shadow:
+    0 10px 24px rgba(26, 16, 64, 0.1),
+    0 0 0 2px rgba(255, 255, 255, 0.78);
+}
+
+.compose-menu-trigger.is-placeholder {
+  color: #8a829c;
+}
+
+.compose-menu-trigger-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.compose-menu-chevron {
+  flex-shrink: 0;
+  opacity: 0.45;
+  transition: transform 180ms ease, opacity 160ms ease;
+}
+
+.compose-menu.is-open .compose-menu-chevron {
+  transform: rotate(180deg);
+  opacity: 0.7;
+}
+
+.compose-menu-panel {
+  margin-top: 0.45rem;
+  max-height: 13.5rem;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.4rem;
+  border-radius: 1.15rem;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background:
+    linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 245, 252, 0.96) 100%);
+  box-shadow:
+    0 22px 48px rgba(26, 16, 64, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  box-sizing: border-box;
+  animation: compose-menu-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.compose-menu-option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.55rem;
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-radius: 0.85rem;
+  background: transparent;
+  color: #1a1040;
+  font: inherit;
+  font-size: 0.92rem;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.compose-menu-option:hover {
+  background: rgba(26, 16, 64, 0.06);
+}
+
+.compose-menu-option.is-selected {
+  background: color-mix(in srgb, var(--compose-menu-accent, #7c5cff) 16%, white);
+  color: #1a1040;
+  font-weight: 600;
+}
+
+.compose-menu-option.is-selected svg {
+  color: var(--compose-menu-accent, #7c5cff);
+  flex-shrink: 0;
+}
+
+.compose-menu.is-compact .compose-menu-trigger {
+  padding-inline: 0.65rem 0.5rem;
+  font-size: 0.92rem;
+}
+
+.compose-menu.is-compact .compose-menu-panel {
+  max-height: 12rem;
+}
+
+.compose-menu.is-compact .compose-menu-option {
+  min-height: 2.35rem;
+  padding-inline: 0.65rem;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.compose-menu.is-compact .compose-menu-option.is-selected {
+  justify-content: space-between;
+}
+
+@keyframes compose-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .compose-glass-chip {
@@ -328,6 +484,7 @@ textarea {
   .stage-copy,
   .compose-poster,
   .compose-panel,
+  .compose-menu-panel,
   .mic-cta:hover .mic-icon,
   .mic-cta.bouncing .mic-icon {
     animation: none !important;
