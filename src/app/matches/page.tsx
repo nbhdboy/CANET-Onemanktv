@@ -8,7 +8,6 @@ import {
   listMyMatchesApp,
   loadProfile,
 } from "@/lib/app-data";
-import { useSupabaseApp } from "@/lib/runtime";
 import { canReview } from "@/lib/reviews";
 import {
   HERO_AGE_COOKIE,
@@ -40,22 +39,22 @@ export default async function MatchesPage({
   const apps = await listMyApplicationsApp(session.id);
   const initiated = await listMyInitiatedApp(session.id);
   const matches = await listMyMatchesApp(session.id);
-  const cloud = useSupabaseApp();
 
   const waitingReply = apps.filter((a) => a.status === "PENDING");
   const waitingPay = matches.filter((m) => m.status === "PENDING_PAYMENT");
   const matched = matches.filter((m) => m.status === "MATCHED");
-  const ended = matches
-    .filter(
-      (m) =>
-        m.status === "COMPLETED" ||
-        m.status === "CANCELLED" ||
-        m.status === "EXPIRED_PAYMENT",
-    )
-    .map((m) => ({
+  const endedBase = matches.filter(
+    (m) =>
+      m.status === "COMPLETED" ||
+      m.status === "CANCELLED" ||
+      m.status === "EXPIRED_PAYMENT",
+  );
+  const ended = await Promise.all(
+    endedBase.map(async (m) => ({
       ...m,
-      reviewable: cloud ? false : canReview(session.id, String(m.id)).ok,
-    }));
+      reviewable: (await canReview(session.id, String(m.id))).ok,
+    })),
+  );
 
   return (
     <MatchesBoard

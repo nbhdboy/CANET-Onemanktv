@@ -1,35 +1,49 @@
 import { getDb, nid, notify, track } from "./db";
 import { nowIso, parseUtc } from "./time";
 import { getMatchForUser } from "./match";
-import type { ReviewRecord } from "./types";
+import type { MatchRecord, ReviewRecord } from "./types";
 import { useSupabaseApp } from "./runtime";
 
-export function canReview(userId: string, matchId: string) {
+export type ReviewGate =
+  | { ok: true; match: MatchRecord }
+  | { ok: false; reason: "NOT_PARTICIPANT" | "NOT_READY" | "TOO_EARLY" | "ALREADY" };
+
+export async function canReview(userId: string, matchId: string): Promise<ReviewGate> {
+  if (useSupabaseApp()) {
+    const { canSupabaseReview } = await import("@/lib/supabase/reviews");
+    return canSupabaseReview(userId, matchId);
+  }
+
   const match = getMatchForUser(userId, matchId);
-  if (!match) return { ok: false as const, reason: "NOT_PARTICIPANT" };
+  if (!match) return { ok: false, reason: "NOT_PARTICIPANT" };
   if (match.status !== "MATCHED" && match.status !== "COMPLETED") {
-    return { ok: false as const, reason: "NOT_READY" };
+    return { ok: false, reason: "NOT_READY" };
   }
   const req = getDb()
     .prepare(`SELECT sing_at, duration_hours FROM sing_requests WHERE id = ?`)
     .get(match.request_id) as { sing_at: string; duration_hours: number };
   const end = parseUtc(req.sing_at).getTime() + req.duration_hours * 3_600_000;
-  if (Date.now() < end) return { ok: false as const, reason: "TOO_EARLY" };
+  if (Date.now() < end) return { ok: false, reason: "TOO_EARLY" };
   const existing = getDb()
     .prepare(`SELECT id FROM reviews WHERE match_id = ? AND reviewer_id = ?`)
     .get(matchId, userId);
-  if (existing) return { ok: false as const, reason: "ALREADY" };
-  return { ok: true as const, match };
+  if (existing) return { ok: false, reason: "ALREADY" };
+  return { ok: true, match };
 }
 
-export function submitReview(input: {
+export async function submitReview(input: {
   userId: string;
   matchId: string;
   rating: number;
   tags: string[];
   comment: string;
 }) {
-  const gate = canReview(input.userId, input.matchId);
+  if (useSupabaseApp()) {
+    const { submitSupabaseReview } = await import("@/lib/supabase/reviews");
+    return submitSupabaseReview(input);
+  }
+
+  const gate = await canReview(input.userId, input.matchId);
   if (!gate.ok) {
     if (gate.reason === "TOO_EARLY") throw new Error("活動結束後才能評價。");
     if (gate.reason === "ALREADY") throw new Error("你已經評價過了。");

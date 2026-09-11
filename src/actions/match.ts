@@ -209,14 +209,16 @@ export async function unlockContactsAction(matchId: string) {
 export async function reviewAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     const session = await requireSession();
-    submitReview({
+    const matchId = String(formData.get("matchId"));
+    await submitReview({
       userId: session.id,
-      matchId: String(formData.get("matchId")),
+      matchId,
       rating: Number(formData.get("rating")),
       tags: formData.getAll("tags").map(String),
       comment: String(formData.get("comment") || ""),
     });
     revalidatePath("/matches");
+    revalidatePath(`/matches/${matchId}`);
     return { ok: true };
   } catch (e) {
     return fail(e);

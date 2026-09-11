@@ -59,10 +59,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
   const myPay = await loadMyPaymentApp(match.id, session.id);
   const allPay = await loadPaymentsApp(match.id);
   const brand = await loadBrandForRequestApp(match.request_id);
-  const cloud = useSupabaseApp();
-  const reviewGate = cloud
-    ? ({ ok: false as const, reason: "NOT_READY" as const })
-    : canReview(session.id, match.id);
+  const reviewGate = await canReview(session.id, match.id);
   const points = Number(myProfile?.points ?? 0);
 
   const fromCookie = parseHeroAge((await cookies()).get(HERO_AGE_COOKIE)?.value);
@@ -216,7 +213,7 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
         </div>
 
         {reviewGate.ok ? <ReviewForm matchId={match.id} {...accents} /> : null}
-        {reviewGate.reason === "TOO_EARLY" ? (
+        {!reviewGate.ok && reviewGate.reason === "TOO_EARLY" ? (
           <p className="text-sm text-white/80">活動結束後就可以互評。</p>
         ) : null}
 
