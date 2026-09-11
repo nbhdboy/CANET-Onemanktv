@@ -3,8 +3,13 @@ import { nowIso } from "./time";
 import { isBlockedEither } from "./users";
 import { useSupabaseApp } from "./runtime";
 
-export function blockUser(blockerId: string, blockedId: string) {
+export async function blockUser(blockerId: string, blockedId: string) {
   if (blockerId === blockedId) throw new Error("不能封鎖自己。");
+  if (useSupabaseApp()) {
+    const { blockSupabaseUser } = await import("@/lib/supabase/blocks");
+    await blockSupabaseUser(blockerId, blockedId);
+    return;
+  }
   getDb()
     .prepare(
       `INSERT OR IGNORE INTO blocks (blocker_id, blocked_id, created_at) VALUES (?, ?, ?)`,
@@ -12,14 +17,22 @@ export function blockUser(blockerId: string, blockedId: string) {
     .run(blockerId, blockedId, nowIso());
 }
 
-export function unblockUser(blockerId: string, blockedId: string) {
+export async function unblockUser(blockerId: string, blockedId: string) {
+  if (useSupabaseApp()) {
+    const { unblockSupabaseUser } = await import("@/lib/supabase/blocks");
+    await unblockSupabaseUser(blockerId, blockedId);
+    return;
+  }
   getDb()
     .prepare(`DELETE FROM blocks WHERE blocker_id = ? AND blocked_id = ?`)
     .run(blockerId, blockedId);
 }
 
-export function listMyBlocks(userId: string) {
-  if (useSupabaseApp()) return [];
+export async function listMyBlocks(userId: string) {
+  if (useSupabaseApp()) {
+    const { listSupabaseMyBlocks } = await import("@/lib/supabase/blocks");
+    return listSupabaseMyBlocks(userId);
+  }
   return getDb()
     .prepare(
       `SELECT b.blocked_id, b.created_at, p.nickname, p.avatar_url
@@ -35,7 +48,7 @@ export function listMyBlocks(userId: string) {
   }>;
 }
 
-export function createReport(input: {
+export async function createReport(input: {
   reporterId: string;
   reportedUserId: string;
   requestId?: string;
@@ -44,6 +57,10 @@ export function createReport(input: {
   description: string;
 }) {
   if (input.reporterId === input.reportedUserId) throw new Error("不能檢舉自己。");
+  if (useSupabaseApp()) {
+    const { createSupabaseReport } = await import("@/lib/supabase/blocks");
+    return createSupabaseReport(input);
+  }
   const id = nid();
   getDb()
     .prepare(

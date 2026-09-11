@@ -226,8 +226,9 @@ export async function reviewAction(_: ActionResult, formData: FormData): Promise
 export async function blockAction(userId: string): Promise<ActionResult> {
   try {
     const session = await requireSession();
-    blockUser(session.id, userId);
+    await blockUser(session.id, userId);
     revalidatePath("/");
+    revalidatePath("/safety");
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -237,7 +238,7 @@ export async function blockAction(userId: string): Promise<ActionResult> {
 export async function reportAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   try {
     const session = await requireSession();
-    createReport({
+    await createReport({
       reporterId: session.id,
       reportedUserId: String(formData.get("reportedUserId")),
       requestId: String(formData.get("requestId") || "") || undefined,
@@ -245,6 +246,7 @@ export async function reportAction(_: ActionResult, formData: FormData): Promise
       reason: String(formData.get("reason")),
       description: String(formData.get("description") || ""),
     });
+    revalidatePath("/safety");
     return { ok: true };
   } catch (e) {
     return fail(e);

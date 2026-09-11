@@ -26,7 +26,7 @@ export default async function SafetyPage({
   const session = await getSession();
   if (!session) redirect("/login?next=/safety");
   const profile = await loadProfile(session.id);
-  const blocks = listMyBlocks(session.id);
+  const blocks = await listMyBlocks(session.id);
 
   const sp = await searchParams;
   const fromQuery = parseHeroAge(typeof sp.age === "string" ? sp.age : null);
