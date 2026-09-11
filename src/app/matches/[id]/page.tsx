@@ -18,7 +18,7 @@ import { ReviewForm } from "@/components/match/ReviewForm";
 import { SafetyActions } from "@/components/safety/SafetyActions";
 import { PaymentDeadlineCountdown } from "@/components/match/PaymentDeadlineCountdown";
 import { GlassFormShell } from "@/components/layout/GlassFormShell";
-import { canReview } from "@/lib/reviews";
+import { canReview, getMyReviewForMatch } from "@/lib/reviews";
 import { useSupabaseApp } from "@/lib/runtime";
 import { getTapPayPublicConfig, isLivePayment } from "@/lib/tappay/env";
 import { getPublicSavedCard } from "@/lib/tappay/cards";
@@ -60,6 +60,10 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
   const allPay = await loadPaymentsApp(match.id);
   const brand = await loadBrandForRequestApp(match.request_id);
   const reviewGate = await canReview(session.id, match.id);
+  const myReview =
+    !reviewGate.ok && reviewGate.reason === "ALREADY"
+      ? await getMyReviewForMatch(session.id, match.id)
+      : null;
   const points = Number(myProfile?.points ?? 0);
 
   const fromCookie = parseHeroAge((await cookies()).get(HERO_AGE_COOKIE)?.value);
@@ -212,7 +216,13 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
           </ul>
         </div>
 
-        {reviewGate.ok ? <ReviewForm matchId={match.id} {...accents} /> : null}
+        {reviewGate.ok || myReview ? (
+          <ReviewForm
+            matchId={match.id}
+            existingReview={myReview}
+            {...accents}
+          />
+        ) : null}
         {!reviewGate.ok && reviewGate.reason === "TOO_EARLY" ? (
           <p className="text-sm text-white/80">活動結束後就可以互評。</p>
         ) : null}

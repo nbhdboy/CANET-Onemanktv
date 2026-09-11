@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { StageDisc, StagePage, StageTitle, StageTrack, ghostBtn } from "@/components/layout/StagePage";
+import { ProfileReviewsList } from "@/components/profile/ProfileReviewsList";
 import { Stars } from "@/components/ui/Stars";
 import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
-import { heroByAge, POSITIVE_REVIEW_TAGS, type HeroAge } from "@/lib/constants";
-import { formatDateTime } from "@/lib/time";
+import { heroByAge, type HeroAge } from "@/lib/constants";
 import type { ReviewRecord } from "@/lib/types";
 
 export function PublicProfileBoard({
@@ -112,38 +112,7 @@ export function PublicProfileBoard({
       </StageTrack>
 
       <StageTrack n="02" title="評價">
-        {reviews.length === 0 ? (
-          <p className="text-sm text-white/80">尚無評價。</p>
-        ) : (
-          reviews.map((r) => {
-            let tags: string[] = [];
-            try {
-              tags = JSON.parse(r.tags || "[]") as string[];
-            } catch {
-              tags = [];
-            }
-            const labels = tags
-              .map((t) => POSITIVE_REVIEW_TAGS.find((x) => x.id === t)?.label || t)
-              .filter(Boolean);
-            return (
-              <article
-                key={r.id}
-                className="border border-white/50 px-5 py-4 text-white"
-              >
-                <div className="flex items-baseline justify-between gap-3">
-                  <p className="font-semibold">⭐ {r.rating}</p>
-                  <p className="text-xs text-white/70">{formatDateTime(r.created_at)}</p>
-                </div>
-                {labels.length > 0 && (
-                  <p className="mt-2 text-sm text-white/85">{labels.join(" · ")}</p>
-                )}
-                {r.comment ? (
-                  <p className="mt-2 text-sm text-white/80">{r.comment}</p>
-                ) : null}
-              </article>
-            );
-          })
-        )}
+        <ProfileReviewsList reviews={reviews} />
       </StageTrack>
 
       <StageTrack n="03" title={isSelf ? "編輯自己" : "下一步"}>

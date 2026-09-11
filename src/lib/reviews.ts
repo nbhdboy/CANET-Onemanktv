@@ -116,6 +116,18 @@ export async function listReviewsForUser(userId: string): Promise<ReviewRecord[]
     .all(userId) as ReviewRecord[];
 }
 
+export async function getMyReviewForMatch(userId: string, matchId: string) {
+  if (useSupabaseApp()) {
+    const { getSupabaseMyReviewForMatch } = await import("@/lib/supabase/reviews");
+    return getSupabaseMyReviewForMatch(userId, matchId);
+  }
+  return (
+    (getDb()
+      .prepare(`SELECT * FROM reviews WHERE match_id = ? AND reviewer_id = ?`)
+      .get(matchId, userId) as ReviewRecord | undefined) ?? null
+  );
+}
+
 export async function reviewTagStats(userId: string) {
   const reviews = await listReviewsForUser(userId);
   return buildTagStats(reviews);

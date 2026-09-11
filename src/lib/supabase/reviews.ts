@@ -41,6 +41,28 @@ export async function listSupabaseReviewsForUser(userId: string): Promise<Review
   }));
 }
 
+export async function getSupabaseMyReviewForMatch(userId: string, matchId: string) {
+  const client = writeClient();
+  const { data, error } = await client
+    .from("reviews")
+    .select("id, match_id, reviewer_id, reviewee_id, rating, tags, comment, created_at")
+    .eq("match_id", matchId)
+    .eq("reviewer_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message || "無法讀取評價。");
+  if (!data) return null;
+  return {
+    id: String(data.id),
+    match_id: String(data.match_id),
+    reviewer_id: String(data.reviewer_id),
+    reviewee_id: String(data.reviewee_id),
+    rating: Number(data.rating),
+    tags: normalizeTags(data.tags),
+    comment: (data.comment as string | null) ?? null,
+    created_at: String(data.created_at),
+  } satisfies ReviewRecord;
+}
+
 export async function canSupabaseReview(userId: string, matchId: string) {
   const match = await getSupabaseMatchForUser(userId, matchId);
   if (!match) return { ok: false as const, reason: "NOT_PARTICIPANT" as const };
