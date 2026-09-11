@@ -197,6 +197,15 @@ export async function acceptApplicationApp(userId: string, applicationId: string
   return acceptApplication(userId, applicationId);
 }
 
+export async function cancelRequestApp(userId: string, requestId: string) {
+  if (useSupabaseApp()) {
+    const { cancelSupabaseRequest } = await import("@/lib/supabase/requests");
+    return cancelSupabaseRequest(userId, requestId);
+  }
+  const { cancelRequest } = await import("@/lib/match");
+  return cancelRequest(userId, requestId);
+}
+
 export async function rejectApplicationApp(userId: string, applicationId: string) {
   if (useSupabaseApp()) {
     await rejectSupabaseApplication(userId, applicationId);

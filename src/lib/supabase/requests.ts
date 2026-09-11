@@ -523,3 +523,109 @@ export async function listSupabaseMyInitiated(userId: string) {
     };
   });
 }
+
+/** 發起人取消歌局（對齊本機 cancelRequest）。 */
+export async function cancelSupabaseRequest(userId: string, requestId: string) {
+  const client = writeClient();
+  const now = new Date().toISOString();
+
+  const { data: req, error } = await client
+    .from("sing_requests")
+    .select("id, initiator_id, status")
+    .eq("id", requestId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!req || req.initiator_id !== userId) throw new Error("找不到這筆需求。");
+
+  if (req.status === "OPEN") {
+    const { error: upd } = await client
+      .from("sing_requests")
+      .update({ status: "CANCELLED", updated_at: now })
+      .eq("id", requestId)
+      .eq("status", "OPEN");
+    if (upd) throw new Error(upd.message);
+    await client.from("cancellations").insert({
+      request_id: requestId,
+      match_id: null,
+      user_id: userId,
+      from_status: "OPEN",
+      created_at: now,
+    });
+    logApp("request.cancelled", { userId, requestId, stage: "OPEN" });
+    return;
+  }
+
+  if (req.status === "MATCH_PENDING") {
+    const { data: match } = await client
+      .from("matches")
+      .select("id, participant_id")
+      .eq("request_id", requestId)
+      .eq("status", "PENDING_PAYMENT")
+      .maybeSingle();
+
+    const { error: reopen } = await client
+      .from("sing_requests")
+      .update({ status: "OPEN", updated_at: now })
+      .eq("id", requestId)
+      .eq("status", "MATCH_PENDING");
+    if (reopen) throw new Error(reopen.message);
+
+    if (match) {
+      await client.from("matches").update({ status: "CANCELLED" }).eq("id", match.id);
+      await client
+        .from("match_applications")
+        .update({ status: "EXPIRED_PAYMENT", updated_at: now })
+        .eq("request_id", requestId)
+        .eq("applicant_id", match.participant_id)
+        .eq("status", "ACCEPTED");
+      await client
+        .from("payments")
+        .update({ status: "FAILED" })
+        .eq("match_id", match.id)
+        .eq("status", "PENDING");
+    }
+
+    await client.from("cancellations").insert({
+      request_id: requestId,
+      match_id: match?.id ?? null,
+      user_id: userId,
+      from_status: "MATCH_PENDING",
+      created_at: now,
+    });
+    logApp("request.cancelled", { userId, requestId, stage: "MATCH_PENDING" });
+    return;
+  }
+
+  if (req.status === "MATCHED") {
+    const { data: match } = await client
+      .from("matches")
+      .select("id")
+      .eq("request_id", requestId)
+      .eq("status", "MATCHED")
+      .maybeSingle();
+
+    const { error: cancelReq } = await client
+      .from("sing_requests")
+      .update({ status: "CANCELLED", updated_at: now })
+      .eq("id", requestId)
+      .eq("status", "MATCHED");
+    if (cancelReq) throw new Error(cancelReq.message);
+
+    if (match) {
+      await client.from("matches").update({ status: "CANCELLED" }).eq("id", match.id);
+    }
+
+    await client.from("cancellations").insert({
+      request_id: requestId,
+      match_id: match?.id ?? null,
+      user_id: userId,
+      from_status: "MATCHED",
+      reason: "user_cancelled_after_match",
+      created_at: now,
+    });
+    logApp("request.cancelled", { userId, requestId, stage: "MATCHED" });
+    return;
+  }
+
+  throw new Error("目前狀態無法取消。");
+}

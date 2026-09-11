@@ -160,10 +160,10 @@ export async function redeemPointsForPayment(userId: string, paymentId: string) 
   const current = Number(profile?.points ?? 0);
   if (current < amount) throw new Error("點數不足，請改用信用卡或 LINE Pay。");
 
-  const next = current - amount;
   const message = `使用 ${amount} 點支付媒合服務費。`;
 
-  const { error: payError } = await client
+  // 先搶佔付款單（僅 PENDING→PAID 成功的一方可扣點），避免連點／重送重複扣點
+  const { data: claimed, error: payError } = await client
     .from("payments")
     .update({
       status: "PAID",
@@ -175,15 +175,64 @@ export async function redeemPointsForPayment(userId: string, paymentId: string) 
     })
     .eq("id", paymentId)
     .eq("status", "PENDING")
-    .eq("user_id", userId);
+    .eq("user_id", userId)
+    .select("id")
+    .maybeSingle();
   if (payError) throw new Error(payError.message);
+  if (!claimed) {
+    const { data: again } = await client
+      .from("payments")
+      .select("status, match_id")
+      .eq("id", paymentId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (again && (again.status === "PAID" || again.status === "NOT_REQUIRED")) {
+      return String(again.match_id);
+    }
+    throw new Error("付款狀態無法更新。");
+  }
 
-  const { error: profileError } = await client
+  const { data: deducted, error: profileError } = await client
     .from("profiles")
-    .update({ points: next, updated_at: now })
-    .eq("id", userId);
-  if (profileError) throw new Error(profileError.message);
+    .update({ points: current - amount, updated_at: now })
+    .eq("id", userId)
+    .gte("points", amount)
+    .select("points")
+    .maybeSingle();
+  if (profileError) {
+    await client
+      .from("payments")
+      .update({
+        status: "PENDING",
+        provider: pay.provider,
+        credit_applied: 0,
+        transaction_id: null,
+        paid_at: null,
+        invoice_status: null,
+      })
+      .eq("id", paymentId)
+      .eq("status", "PAID")
+      .eq("provider", "POINTS");
+    throw new Error(profileError.message);
+  }
+  if (!deducted) {
+    await client
+      .from("payments")
+      .update({
+        status: "PENDING",
+        provider: pay.provider,
+        credit_applied: 0,
+        transaction_id: null,
+        paid_at: null,
+        invoice_status: null,
+      })
+      .eq("id", paymentId)
+      .eq("status", "PAID")
+      .eq("provider", "POINTS");
+    throw new Error("點數不足，請改用信用卡或 LINE Pay。");
+  }
 
+  const next = Number(deducted.points);
   await client.from("credit_ledger").insert({
     id: randomUUID(),
     user_id: userId,

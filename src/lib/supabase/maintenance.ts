@@ -14,12 +14,14 @@ function writeClient() {
  * - 付款逾時 → EXPIRED_PAYMENT；已付轉點數；未付 FAILED；免費額度不扣
  * - 唱歌時間未過 → 歌局重回 OPEN；已過 → EXPIRED，並在通知說明
  * - 過期仍 OPEN 的歌局 → EXPIRED
+ * - 唱歌結束 → MATCHED 標成 COMPLETED，並發評價提醒
  */
 export async function runSupabaseMaintenance() {
   const client = writeClient();
   const now = new Date().toISOString();
   let expiredPayments = 0;
   let expiredRequests = 0;
+  let completedMatches = 0;
 
   const { data: timedOut, error } = await client
     .from("matches")
@@ -134,6 +136,56 @@ export async function runSupabaseMaintenance() {
     }
   }
 
-  logApp("maintenance.supabase_ok", { expiredPayments, expiredRequests });
-  return { expiredPayments, expiredRequests };
+  // 唱歌時間＋時長結束 → COMPLETED + 評價提醒
+  const { data: matchedRows, error: matchedError } = await client
+    .from("matches")
+    .select("id, request_id, initiator_id, participant_id, sing_requests(sing_at, duration_hours)")
+    .eq("status", "MATCHED");
+  if (matchedError) {
+    logAppError("maintenance.list_matched_failed", { message: matchedError.message });
+  } else {
+    for (const row of matchedRows || []) {
+      const reqRel = row.sing_requests as
+        | { sing_at?: string; duration_hours?: number }
+        | { sing_at?: string; duration_hours?: number }[]
+        | null;
+      const req = Array.isArray(reqRel) ? reqRel[0] : reqRel;
+      if (!req?.sing_at) continue;
+      const endMs =
+        new Date(String(req.sing_at)).getTime() + Number(req.duration_hours || 0) * 3_600_000;
+      if (!(endMs > 0) || endMs > Date.now()) continue;
+
+      const { data: updatedMatch } = await client
+        .from("matches")
+        .update({ status: "COMPLETED", completed_at: now })
+        .eq("id", row.id)
+        .eq("status", "MATCHED")
+        .select("id")
+        .maybeSingle();
+      if (!updatedMatch) continue;
+
+      await client
+        .from("sing_requests")
+        .update({ status: "COMPLETED", updated_at: now })
+        .eq("id", row.request_id)
+        .eq("status", "MATCHED");
+
+      const reminder = "今天唱得如何？幫你的 +1 留個評價吧！";
+      for (const uid of [row.initiator_id, row.participant_id]) {
+        await client.from("notifications").insert({
+          user_id: uid,
+          type: "review_reminder",
+          payload: withNotificationHref("review_reminder", {
+            matchId: row.id,
+            message: reminder,
+          }),
+          is_read: false,
+        });
+      }
+      completedMatches += 1;
+    }
+  }
+
+  logApp("maintenance.supabase_ok", { expiredPayments, expiredRequests, completedMatches });
+  return { expiredPayments, expiredRequests, completedMatches };
 }

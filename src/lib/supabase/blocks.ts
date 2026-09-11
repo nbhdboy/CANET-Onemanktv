@@ -134,7 +134,20 @@ export async function createSupabaseReport(input: {
     .single();
 
   if (error) throw new Error(error.message || "無法送出檢舉。");
-  return String(data.id);
+  const reportId = String(data.id);
+
+  try {
+    const { enforceSupabaseReportPolicy } = await import("@/lib/supabase/admin");
+    await enforceSupabaseReportPolicy(input.reportedUserId, reportId);
+  } catch (e) {
+    const { logAppError } = await import("@/lib/log");
+    logAppError("report.enforce_failed", {
+      reportId,
+      message: e instanceof Error ? e.message : String(e),
+    });
+  }
+
+  return reportId;
 }
 
 export async function hasSupabaseBlockedUser(blockerId: string, blockedId: string) {

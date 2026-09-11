@@ -60,6 +60,7 @@ export interface Profile {
   rating_count: number;
   status: UserStatus;
   is_admin: number;
+  suspended_until?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -4,13 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireSession } from "@/lib/session";
 import {
-  cancelRequest,
   markBookingDone,
   type FeedFilters,
 } from "@/lib/match";
 import {
   acceptApplicationApp,
   applyToRequestApp,
+  cancelRequestApp,
   createRequestApp,
   loadMatchForUserApp,
   loadUnlockedContactsApp,
@@ -147,7 +147,7 @@ export async function rejectAction(applicationId: string): Promise<ActionResult>
 export async function cancelRequestAction(requestId: string): Promise<ActionResult> {
   try {
     const session = await requireSession();
-    cancelRequest(session.id, requestId);
+    await cancelRequestApp(session.id, requestId);
     revalidatePath("/");
     revalidatePath(`/requests/${requestId}`);
     return { ok: true };

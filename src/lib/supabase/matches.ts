@@ -322,6 +322,12 @@ export async function acceptSupabaseApplication(userId: string, applicationId: s
   const { error: payError } = await client.from("payments").insert(paymentRows);
   if (payError) {
     logAppError("payment.insert_failed", { message: payError.message, code: payError.code });
+    await client.from("matches").delete().eq("id", matchId);
+    await client.from("sing_requests").update({ status: "OPEN", updated_at: now }).eq("id", req.id);
+    await client
+      .from("match_applications")
+      .update({ status: "PENDING", updated_at: now })
+      .eq("id", applicationId);
     throw new Error(payError.message);
   }
 

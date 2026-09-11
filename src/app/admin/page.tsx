@@ -21,7 +21,67 @@ export default async function AdminPage() {
   if (!session) redirect("/login");
   const me = await loadProfile(session.id);
   if (!me?.is_admin) redirect("/");
-  if (useSupabaseApp()) redirect("/");
+
+  if (useSupabaseApp()) {
+    const { listSupabaseReportsAdmin, listSupabaseUsersAdmin } = await import(
+      "@/lib/supabase/admin"
+    );
+    const reports = await listSupabaseReportsAdmin();
+    const users = await listSupabaseUsersAdmin();
+
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-8 space-y-10">
+        <div>
+          <h1 className="text-3xl font-bold">管理後台</h1>
+          <p className="text-sm text-[var(--muted)] mt-2">
+            檢舉送出後會自動處理：首次停權 3 天，再次被檢舉則停用帳號。你也可在此覆核或手動調整狀態。
+          </p>
+        </div>
+
+        <section className="space-y-3">
+          <h2 className="font-bold">檢舉</h2>
+          {reports.length === 0 && <p className="text-sm text-[var(--muted)]">目前沒有檢舉。</p>}
+          {reports.map((r) => (
+            <article key={r.id} className="rounded-3xl bg-white p-4 card-float space-y-2">
+              <p className="font-medium">
+                {r.reporter_name} → {r.reported_name} · {r.reason} · {r.status}
+              </p>
+              <p className="text-xs text-[var(--muted)]">
+                被檢舉人狀態：{r.reported_status}
+                {r.reported_suspended_until
+                  ? `（至 ${new Date(r.reported_suspended_until).toLocaleString("zh-TW")}）`
+                  : ""}
+              </p>
+              {r.description ? <p className="text-sm">{r.description}</p> : null}
+              {r.admin_note ? <p className="text-xs text-[var(--muted)]">備註：{r.admin_note}</p> : null}
+              <ReportButtons reportId={r.id} />
+              <UserStatusButtons userId={r.reported_user_id} />
+            </article>
+          ))}
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="font-bold">使用者</h2>
+          {users.map((u) => (
+            <article key={u.id} className="rounded-3xl bg-white p-4 card-float space-y-2">
+              <p className="font-medium">
+                {u.nickname || "未命名"} · {u.status}
+                {u.suspended_until
+                  ? `（至 ${new Date(u.suspended_until).toLocaleString("zh-TW")}）`
+                  : ""}
+              </p>
+              <p className="text-xs text-[var(--muted)]">
+                matches {u.successful_match_count} · free_used {u.free_match_used}
+                {u.is_admin ? " · admin" : ""}
+              </p>
+              <UserStatusButtons userId={u.id} />
+            </article>
+          ))}
+        </section>
+      </main>
+    );
+  }
+
   const kpis = adminKpis();
   const users = listUsersAdmin();
   const reports = listReportsAdmin();
@@ -86,7 +146,8 @@ export default async function AdminPage() {
         {reports.map((r) => (
           <article key={String(r.id)} className="rounded-3xl bg-white p-4 card-float space-y-2">
             <p className="font-medium">
-              {String(r.reporter_name)} → {String(r.reported_name)} · {String(r.reason)} · {String(r.status)}
+              {String(r.reporter_name)} → {String(r.reported_name)} · {String(r.reason)} ·{" "}
+              {String(r.status)}
             </p>
             {r.description ? <p className="text-sm">{String(r.description)}</p> : null}
             <ReportButtons reportId={String(r.id)} />
@@ -143,26 +204,46 @@ export default async function AdminPage() {
         <form action={saveConfigForm} className="rounded-3xl bg-white p-4 card-float grid gap-3">
           <label className="text-sm">
             service_fee_twd
-            <input name="service_fee_twd" defaultValue={config.service_fee_twd} className="mt-1 w-full h-12 rounded-2xl border px-3" />
+            <input
+              name="service_fee_twd"
+              defaultValue={config.service_fee_twd}
+              className="mt-1 w-full h-12 rounded-2xl border px-3"
+            />
           </label>
           <label className="text-sm">
             free_match_count
-            <input name="free_match_count" defaultValue={config.free_match_count} className="mt-1 w-full h-12 rounded-2xl border px-3" />
+            <input
+              name="free_match_count"
+              defaultValue={config.free_match_count}
+              className="mt-1 w-full h-12 rounded-2xl border px-3"
+            />
           </label>
           <label className="text-sm">
             payment_timeout_minutes
-            <input name="payment_timeout_minutes" defaultValue={config.payment_timeout_minutes} className="mt-1 w-full h-12 rounded-2xl border px-3" />
+            <input
+              name="payment_timeout_minutes"
+              defaultValue={config.payment_timeout_minutes}
+              className="mt-1 w-full h-12 rounded-2xl border px-3"
+            />
           </label>
           <label className="text-sm">
             payment_mode
-            <select name="payment_mode" defaultValue={config.payment_mode} className="mt-1 w-full h-12 rounded-2xl border px-3">
+            <select
+              name="payment_mode"
+              defaultValue={config.payment_mode}
+              className="mt-1 w-full h-12 rounded-2xl border px-3"
+            >
               <option value="MOCK">MOCK</option>
               <option value="LIVE">LIVE</option>
             </select>
           </label>
           <label className="text-sm">
             no_show_review_threshold
-            <input name="no_show_review_threshold" defaultValue={config.no_show_review_threshold} className="mt-1 w-full h-12 rounded-2xl border px-3" />
+            <input
+              name="no_show_review_threshold"
+              defaultValue={config.no_show_review_threshold}
+              className="mt-1 w-full h-12 rounded-2xl border px-3"
+            />
           </label>
           <button className="h-12 rounded-2xl bg-purple-700 text-white font-semibold">儲存設定</button>
         </form>

@@ -12,17 +12,24 @@ import {
   upsertVenue,
 } from "@/lib/admin";
 import { markNotificationReadApp, markNotificationsReadApp } from "@/lib/app-data";
+import { useSupabaseApp } from "@/lib/runtime";
 import type { ActionResult } from "@/lib/types";
 import type { UserStatus } from "@/lib/types";
 
 async function admin() {
   const s = await requireSession();
-  requireAdmin(s.id);
+  if (useSupabaseApp()) {
+    const { requireSupabaseAdmin } = await import("@/lib/supabase/admin");
+    await requireSupabaseAdmin(s.id);
+  } else {
+    requireAdmin(s.id);
+  }
   return s;
 }
 
 export async function saveConfigAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const s = await admin();
+  if (useSupabaseApp()) return { ok: false, error: "雲端請至 Supabase 調整平台設定。" };
   savePlatformConfig(s.id, {
     service_fee_twd: String(formData.get("service_fee_twd") || "50"),
     free_match_count: String(formData.get("free_match_count") || "1"),
@@ -36,6 +43,7 @@ export async function saveConfigAction(_: ActionResult, formData: FormData): Pro
 
 export async function updateBrandAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const s = await admin();
+  if (useSupabaseApp()) return { ok: false, error: "雲端請至 Supabase 調整品牌。" };
   updateBrand(s.id, String(formData.get("id")), {
     name: String(formData.get("name")),
     booking_url: String(formData.get("booking_url")),
@@ -47,6 +55,7 @@ export async function updateBrandAction(_: ActionResult, formData: FormData): Pr
 
 export async function upsertVenueAction(_: ActionResult, formData: FormData): Promise<ActionResult> {
   const s = await admin();
+  if (useSupabaseApp()) return { ok: false, error: "雲端請至 Supabase 調整分店。" };
   upsertVenue(s.id, {
     id: String(formData.get("id") || "") || undefined,
     brand_id: String(formData.get("brand_id")),
@@ -65,14 +74,24 @@ export async function resolveReportAction(
   action: "DISMISSED" | "WARNING" | "SUSPENDED" | "BANNED" | "RESOLVED",
 ): Promise<ActionResult> {
   const s = await admin();
-  resolveReport(s.id, reportId, action);
+  if (useSupabaseApp()) {
+    const { resolveSupabaseReport } = await import("@/lib/supabase/admin");
+    await resolveSupabaseReport(s.id, reportId, action);
+  } else {
+    resolveReport(s.id, reportId, action);
+  }
   revalidatePath("/admin");
   return { ok: true };
 }
 
 export async function setUserStatusAction(userId: string, status: UserStatus): Promise<ActionResult> {
   const s = await admin();
-  adminSetUserStatus(s.id, userId, status);
+  if (useSupabaseApp()) {
+    const { setSupabaseUserStatus } = await import("@/lib/supabase/admin");
+    await setSupabaseUserStatus(s.id, userId, status);
+  } else {
+    adminSetUserStatus(s.id, userId, status);
+  }
   revalidatePath("/admin");
   return { ok: true };
 }
@@ -96,6 +115,7 @@ export async function openNotificationAction(id: string, href: string) {
 
 export async function adminDashboard() {
   const s = await admin();
+  if (useSupabaseApp()) return { adminId: s.id, kpis: null };
   return { adminId: s.id, kpis: adminKpis() };
 }
 

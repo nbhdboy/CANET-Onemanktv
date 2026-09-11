@@ -32,9 +32,35 @@ function mapProfile(row: Record<string, unknown>): Profile {
     rating_count: Number(row.rating_count ?? 0),
     status: (row.status as UserStatus) || "ACTIVE",
     is_admin: flag(row.is_admin),
+    suspended_until: row.suspended_until ? String(row.suspended_until) : null,
     created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
+}
+
+/** 停權到期後自動恢復 ACTIVE。 */
+async function clearExpiredSuspension(profile: Profile): Promise<Profile> {
+  if (profile.status !== "SUSPENDED") return profile;
+  if (!profile.suspended_until) return profile;
+  if (new Date(profile.suspended_until).getTime() > Date.now()) return profile;
+
+  const supabase = await dataClient();
+  if (!supabase) return profile;
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ status: "ACTIVE", suspended_until: null, updated_at: now })
+    .eq("id", profile.id)
+    .eq("status", "SUSPENDED");
+  if (error) {
+    logAppError("profile.clear_suspension_failed", {
+      userId: profile.id,
+      message: error.message,
+    });
+    return profile;
+  }
+  logApp("profile.suspension_cleared", { userId: profile.id });
+  return { ...profile, status: "ACTIVE", suspended_until: null, updated_at: now };
 }
 
 export async function fetchSupabaseProfile(id: string): Promise<Profile | undefined> {
@@ -42,7 +68,7 @@ export async function fetchSupabaseProfile(id: string): Promise<Profile | undefi
   if (!supabase) return undefined;
   const { data, error } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
   if (error || !data) return undefined;
-  return mapProfile(data as Record<string, unknown>);
+  return clearExpiredSuspension(mapProfile(data as Record<string, unknown>));
 }
 
 export async function ensureSupabaseProfile(id: string): Promise<Profile | undefined> {
