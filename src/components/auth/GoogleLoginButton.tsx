@@ -3,42 +3,24 @@
 import { useState } from "react";
 import { safeNextPath } from "@/lib/auth-redirect";
 
-type OAuthProvider = "google" | "facebook";
-
-const LABELS: Record<OAuthProvider, { idle: string; pending: string; missing: string; fail: string }> = {
-  google: {
-    idle: "使用 Google 登入",
-    pending: "前往 Google…",
-    missing: "尚未設定社群登入。請在 .env.local 填入 Supabase URL 與 anon key。",
-    fail: "無法開啟 Google 登入，請稍後再試。",
-  },
-  facebook: {
-    idle: "使用 Facebook 登入",
-    pending: "前往 Facebook…",
-    missing: "尚未設定社群登入。請在 .env.local 填入 Supabase URL 與 anon key。",
-    fail: "無法開啟 Facebook 登入，請稍後再試。",
-  },
-};
-
 export function OAuthLoginButton({
-  provider,
+  provider = "google",
   next,
   glass = false,
 }: {
-  provider: OAuthProvider;
+  provider?: "google";
   next?: string;
   glass?: boolean;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const copy = LABELS[provider];
 
   async function startOAuth() {
     setError(null);
     const { createSupabaseBrowserClient } = await import("@/lib/supabase/browser");
     const supabase = createSupabaseBrowserClient();
     if (!supabase) {
-      setError(copy.missing);
+      setError("尚未設定社群登入。請在 .env.local 填入 Supabase URL 與 anon key。");
       return;
     }
     setPending(true);
@@ -51,7 +33,7 @@ export function OAuthLoginButton({
     });
     if (oauthError) {
       setPending(false);
-      setError(copy.fail);
+      setError("無法開啟 Google 登入，請稍後再試。");
     }
   }
 
@@ -67,8 +49,8 @@ export function OAuthLoginButton({
             : "inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-[var(--line)] bg-white font-semibold text-[var(--foreground)] disabled:opacity-60"
         }
       >
-        <OAuthIcon provider={provider} />
-        {pending ? copy.pending : copy.idle}
+        <GoogleIcon />
+        {pending ? "前往 Google…" : "使用 Google 登入"}
       </button>
       {error ? (
         <p className={`text-sm ${glass ? "text-amber-100" : "text-rose-600"}`}>{error}</p>
@@ -77,7 +59,6 @@ export function OAuthLoginButton({
   );
 }
 
-/** @deprecated 請改用 OAuthLoginButton provider="google" */
 export function GoogleLoginButton({
   next,
   glass = false,
@@ -88,14 +69,7 @@ export function GoogleLoginButton({
   return <OAuthLoginButton provider="google" next={next} glass={glass} />;
 }
 
-function OAuthIcon({ provider }: { provider: OAuthProvider }) {
-  if (provider === "facebook") {
-    return (
-      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden fill="currentColor">
-        <path d="M14 9h3V6h-3c-1.7 0-3 1.3-3 3v2H8v3h3v7h3v-7h3l1-3h-4V9c0-.6.4-1 1-1z" />
-      </svg>
-    );
-  }
+function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden>
       <path

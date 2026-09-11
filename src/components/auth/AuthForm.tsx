@@ -11,7 +11,6 @@ const init: ActionResult = { ok: false };
 
 const CALLBACK_ERRORS: Record<string, string> = {
   google: "Google 登入失敗，請再試一次或改用 Email。",
-  facebook: "Facebook 登入失敗，請再試一次或改用 Email。",
   oauth: "社群登入失敗，請再試一次或改用 Email。",
   banned: "此帳號已被停權。",
   suspended: "此帳號目前暫停使用。",
@@ -83,7 +82,6 @@ export function AuthForm({
       </div>
       <div className="space-y-2">
         <OAuthLoginButton provider="google" next={next} glass />
-        <OAuthLoginButton provider="facebook" next={next} glass />
       </div>
       <p className="text-center text-sm text-white/80">
         {mode === "login" ? (
