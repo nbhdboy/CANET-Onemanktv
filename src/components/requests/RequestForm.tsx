@@ -372,13 +372,11 @@ export function RequestForm({
                 <Track n="02" title="何時唱" accent={accent}>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <IconField icon={<CalendarDays size={16} />} label="日期">
-                      <input
+                      <GlassDateInput
                         name="date"
-                        type="date"
                         required
                         value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className={field}
+                        onChange={setDate}
                       />
                     </IconField>
                     <IconField icon={<Clock3 size={16} />} label="開唱時間">
@@ -600,6 +598,51 @@ function IconField({
         {label}
       </p>
       {children}
+    </div>
+  );
+}
+
+function prettyDate(date: string) {
+  if (!date) return "";
+  const parts = date.split("-");
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!year || !month || !day) return date;
+  return `${year}/${month}/${day}`;
+}
+
+function GlassDateInput({
+  value,
+  onChange,
+  name,
+  required,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  name: string;
+  required?: boolean;
+}) {
+  const label = prettyDate(value);
+
+  return (
+    <div className="compose-glass-date-wrap">
+      <div
+        className={`${field} compose-glass-date-face ${label ? "" : "is-empty"}`}
+        aria-hidden
+      >
+        <span className="min-w-0 truncate">{label || "選擇日期"}</span>
+        <CalendarDays size={16} strokeWidth={2.25} className="shrink-0 opacity-55" />
+      </div>
+      <input
+        className="compose-glass-date-native"
+        name={name}
+        type="date"
+        required={required}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-label="日期"
+      />
     </div>
   );
 }
