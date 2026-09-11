@@ -69,8 +69,8 @@ export function durationLabel(hours: number) {
 export function gateError(code: string): string {
   const map: Record<string, string> = {
     UNAUTHORIZED: "請先登入。",
-    BANNED: "此帳號已被停權。",
-    SUSPENDED: "此帳號目前暫停使用。",
+    BANNED: "因被其他歌友多次檢舉，此帳號已永久停用。",
+    SUSPENDED: "因被其他歌友檢舉，此帳號目前暫停使用 3 天。",
     AGE: "K歌 +1 僅開放 18 歲以上使用者。",
     PROFILE: "請先完成個人資料，再開始媒合。",
     CONTACT: "請先設定至少一種聯絡方式，再開始媒合。",

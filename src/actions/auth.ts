@@ -112,8 +112,10 @@ async function loginWithSupabase(
 
   const profile =
     (await fetchSupabaseProfile(data.user.id)) ?? (await ensureSupabaseProfile(data.user.id));
-  if (profile?.status === "BANNED") return authFail("此帳號已被停權。");
-  if (profile?.status === "SUSPENDED") return authFail("此帳號目前暫停使用。");
+  if (profile?.status === "BANNED")
+    return authFail("因被其他歌友多次檢舉，此帳號已永久停用。");
+  if (profile?.status === "SUSPENDED")
+    return authFail("因被其他歌友檢舉，此帳號目前暫停使用 3 天。");
 
   await createSession({ id: data.user.id, email: data.user.email });
   logApp("auth.login_ok", { userId: data.user.id });
@@ -165,8 +167,10 @@ export async function loginAction(_: ActionResult, formData: FormData): Promise<
       return authFail("帳號或密碼不正確。");
     }
     const profile = getProfile(user.id);
-    if (profile?.status === "BANNED") return authFail("此帳號已被停權。");
-    if (profile?.status === "SUSPENDED") return authFail("此帳號目前暫停使用。");
+    if (profile?.status === "BANNED")
+      return authFail("因被其他歌友多次檢舉，此帳號已永久停用。");
+    if (profile?.status === "SUSPENDED")
+      return authFail("因被其他歌友檢舉，此帳號目前暫停使用 3 天。");
     await createSession({ id: user.id, email: user.email });
     redirect(profile?.profile_completed ? next || "/" : "/onboarding");
   } catch (e) {

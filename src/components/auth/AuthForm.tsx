@@ -12,9 +12,16 @@ const init: ActionResult = { ok: false };
 const CALLBACK_ERRORS: Record<string, string> = {
   google: "Google 登入失敗，請再試一次或改用 Email。",
   oauth: "社群登入失敗，請再試一次或改用 Email。",
-  banned: "此帳號已被停權。",
-  suspended: "此帳號目前暫停使用。",
+  banned: "因被其他歌友多次檢舉，此帳號已永久停用。",
+  suspended: "因被其他歌友檢舉，此帳號目前暫停使用 3 天。",
 };
+
+const severeErrorBoxCls = "rounded-2xl bg-rose-600 px-3 py-2 text-sm font-medium text-white";
+const softErrorBoxCls = "rounded-2xl bg-black/30 px-3 py-2 text-sm text-amber-100";
+
+function isAccountBlockMessage(message: string) {
+  return message.includes("暫停使用") || message.includes("永久停用");
+}
 
 export function AuthForm({
   mode,
@@ -34,11 +41,12 @@ export function AuthForm({
   const action = mode === "login" ? loginAction : signupAction;
   const [state, formAction, pending] = useActionState(action, init);
   const callbackMessage = oauthError ? CALLBACK_ERRORS[oauthError] : undefined;
+  const callbackSevere = oauthError === "banned" || oauthError === "suspended";
 
   return (
     <div className="space-y-4" style={{ colorScheme: "light" }}>
       {callbackMessage ? (
-        <p className="rounded-2xl bg-black/30 px-3 py-2 text-sm text-amber-100">{callbackMessage}</p>
+        <p className={callbackSevere ? severeErrorBoxCls : softErrorBoxCls}>{callbackMessage}</p>
       ) : null}
       <form action={formAction} className="space-y-4">
         {next ? <input type="hidden" name="next" value={next} /> : null}
@@ -64,7 +72,9 @@ export function AuthForm({
           />
         </label>
         {state.error ? (
-          <p className="rounded-2xl bg-black/30 px-3 py-2 text-sm text-amber-100">{state.error}</p>
+          <p className={isAccountBlockMessage(state.error) ? severeErrorBoxCls : softErrorBoxCls}>
+            {state.error}
+          </p>
         ) : null}
         <button
           type="submit"
