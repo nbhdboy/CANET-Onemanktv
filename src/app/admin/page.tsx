@@ -28,7 +28,7 @@ export default async function AdminPage() {
   const brands = getBrands(true);
   const venues = getVenues(undefined, true);
   const config = getAllConfig();
-  const noShow = usersNeedingNoShowReview();
+  const noShow = await usersNeedingNoShowReview();
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 space-y-10">

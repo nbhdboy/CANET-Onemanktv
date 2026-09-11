@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getSession } from "@/lib/session";
 import { loadProfile } from "@/lib/app-data";
 import { listReviewsForUser, reviewTagStats } from "@/lib/reviews";
-import { isBlockedEither } from "@/lib/safety";
 import { accountAgeLabel, ageFromBirthYear } from "@/lib/time";
 import {
   HERO_AGE_COOKIE,
@@ -11,24 +10,31 @@ import {
   parseHeroAge,
 } from "@/lib/constants";
 import { PublicProfileBoard } from "@/components/profile/PublicProfileBoard";
-import { useSupabaseApp } from "@/lib/runtime";
 
-import type { IdParams } from "@/lib/route-types";
+import type { IdParams, Search } from "@/lib/route-types";
 
 export const dynamic = "force-dynamic";
 
-export default async function PublicProfilePage({ params }: { params: IdParams }) {
+export default async function PublicProfilePage({
+  params,
+  searchParams,
+}: {
+  params: IdParams;
+  searchParams: Search;
+}) {
   const { id } = await params;
   const session = await getSession();
-  if (session && !useSupabaseApp() && isBlockedEither(session.id, id)) notFound();
+  // 封鎖只影響媒合／動態牆；公開名片與評價仍可查看（例如從安全中心回看）。
 
   const profile = await loadProfile(id);
   if (!profile || profile.status === "BANNED") notFound();
 
-  const stats = reviewTagStats(id);
-  const reviews = listReviewsForUser(id);
+  const stats = await reviewTagStats(id);
+  const reviews = await listReviewsForUser(id);
   const viewer = session ? await loadProfile(session.id) : null;
 
+  const sp = await searchParams;
+  const fromSafety = (typeof sp.from === "string" ? sp.from : sp.from?.[0]) === "safety";
   const fromCookie = parseHeroAge((await cookies()).get(HERO_AGE_COOKIE)?.value);
   const fromViewer =
     viewer?.birth_year_private != null
@@ -50,7 +56,8 @@ export default async function PublicProfilePage({ params }: { params: IdParams }
       singAgainPct={Math.max(0, 100 - stats.pct("no_show"))}
       reviews={reviews}
       isSelf={session?.id === id}
-      backHref={session ? "/matches" : "/"}
+      backHref={fromSafety ? "/safety" : session ? "/matches" : "/"}
+      backLabel={fromSafety ? "回安全中心" : "返回"}
     />
   );
 }

@@ -20,6 +20,7 @@ export function PublicProfileBoard({
   reviews,
   isSelf,
   backHref = "/matches",
+  backLabel = "返回",
 }: {
   ageBand: HeroAge;
   nickname: string;
@@ -34,6 +35,7 @@ export function PublicProfileBoard({
   reviews: ReviewRecord[];
   isSelf: boolean;
   backHref?: string;
+  backLabel?: string;
 }) {
   const preset = avatarPresetOrFallback(avatarUrl);
   const photo = isPhotoAvatar(avatarUrl) ? avatarUrl : null;
@@ -49,7 +51,7 @@ export function PublicProfileBoard({
       kicker={`K歌 +1 · ${hero.label}名片`}
       liveLabel="LIVE 名片"
       backHref={backHref}
-      backLabel="返回"
+      backLabel={backLabel}
       aside={
         <StageDisc
           emoji={preset.emoji}

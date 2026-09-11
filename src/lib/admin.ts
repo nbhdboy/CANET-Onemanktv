@@ -191,13 +191,14 @@ export function savePlatformConfig(adminId: string, values: Record<string, strin
   for (const [k, v] of Object.entries(values)) setConfig(k, v);
 }
 
-export function usersNeedingNoShowReview() {
+export async function usersNeedingNoShowReview() {
   const threshold = Number(getAllConfig().no_show_review_threshold || 3);
   const users = getDb().prepare(`SELECT id, nickname FROM profiles`).all() as Array<{
     id: string;
     nickname: string;
   }>;
-  return users
-    .map((u) => ({ ...u, noShow: noShowCount(u.id) }))
-    .filter((u) => u.noShow >= threshold);
+  const withCounts = await Promise.all(
+    users.map(async (u) => ({ ...u, noShow: await noShowCount(u.id) })),
+  );
+  return withCounts.filter((u) => u.noShow >= threshold);
 }

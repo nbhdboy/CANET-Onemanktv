@@ -32,7 +32,7 @@ export default async function ProfilePage({
       ? ageBandFromYears(ageFromBirthYear(profile.birth_year_private))
       : null;
 
-  const stats = reviewTagStats(session.id);
+  const stats = await reviewTagStats(session.id);
   const unread = await loadUnread(session.id);
 
   return (

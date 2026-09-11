@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/session";
@@ -91,13 +92,20 @@ export default async function SafetyPage({
         ) : (
           blocks.map((b) => {
             return (
-              <div
+              <Link
                 key={b.blocked_id}
-                className="flex min-h-12 items-center gap-3 border border-white/50 px-5 py-4"
+                href={`/u/${b.blocked_id}?from=safety`}
+                className="flex min-h-12 items-center gap-3 border border-white/50 px-5 py-4 text-white transition-colors hover:bg-white/10"
               >
                 <Avatar presetId={b.avatar_url} nickname={b.nickname} size={36} />
-                <p className="font-semibold">{b.nickname}</p>
-              </div>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{b.nickname}</p>
+                  <p className="mt-0.5 text-xs text-white/70">查看評價與公開名片</p>
+                </div>
+                <span className="shrink-0 text-sm text-white/80" aria-hidden>
+                  →
+                </span>
+              </Link>
             );
           })
         )}

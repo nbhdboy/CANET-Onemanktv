@@ -76,18 +76,7 @@ export function submitReview(input: {
   return id;
 }
 
-export function listReviewsForUser(userId: string): ReviewRecord[] {
-  if (useSupabaseApp()) return [];
-  return getDb()
-    .prepare(`SELECT * FROM reviews WHERE reviewee_id = ? ORDER BY created_at DESC`)
-    .all(userId) as ReviewRecord[];
-}
-
-export function reviewTagStats(userId: string) {
-  if (useSupabaseApp()) {
-    return { counts: {} as Record<string, number>, pct: () => 0, total: 0, noShowCount: 0 };
-  }
-  const reviews = listReviewsForUser(userId);
+function buildTagStats(reviews: ReviewRecord[]) {
   const counts: Record<string, number> = {};
   for (const r of reviews) {
     try {
@@ -103,14 +92,29 @@ export function reviewTagStats(userId: string) {
   return { counts, pct, total: reviews.length, noShowCount };
 }
 
-export function topTags(userId: string, limit = 3) {
-  const { counts } = reviewTagStats(userId);
+export async function listReviewsForUser(userId: string): Promise<ReviewRecord[]> {
+  if (useSupabaseApp()) {
+    const { listSupabaseReviewsForUser } = await import("@/lib/supabase/reviews");
+    return listSupabaseReviewsForUser(userId);
+  }
+  return getDb()
+    .prepare(`SELECT * FROM reviews WHERE reviewee_id = ? ORDER BY created_at DESC`)
+    .all(userId) as ReviewRecord[];
+}
+
+export async function reviewTagStats(userId: string) {
+  const reviews = await listReviewsForUser(userId);
+  return buildTagStats(reviews);
+}
+
+export async function topTags(userId: string, limit = 3) {
+  const { counts } = await reviewTagStats(userId);
   return Object.entries(counts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, limit)
     .map(([id, count]) => ({ id, count }));
 }
 
-export function noShowCount(userId: string) {
-  return reviewTagStats(userId).noShowCount;
+export async function noShowCount(userId: string) {
+  return (await reviewTagStats(userId)).noShowCount;
 }

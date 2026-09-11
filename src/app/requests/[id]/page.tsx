@@ -17,8 +17,8 @@ export default async function RequestDetailPage({ params }: { params: IdParams }
   if (session) track("request_viewed", session.id, { requestId: id });
 
   const isOwner = session?.id === item.initiator.id;
-  const stats = reviewTagStats(item.initiator.id);
-  const reviews = listReviewsForUser(item.initiator.id).slice(0, 3);
+  const stats = await reviewTagStats(item.initiator.id);
+  const reviews = (await listReviewsForUser(item.initiator.id)).slice(0, 3);
 
   return (
     <RequestStage
