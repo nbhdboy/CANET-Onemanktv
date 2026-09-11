@@ -179,6 +179,14 @@ export async function loginAction(_: ActionResult, formData: FormData): Promise<
 }
 
 export async function logoutAction() {
+  try {
+    const supabase = await createSupabaseServerClient();
+    if (supabase) await supabase.auth.signOut();
+  } catch (e) {
+    logAppError("auth.logout_supabase_failed", {
+      message: e instanceof Error ? e.message : String(e),
+    });
+  }
   await destroySession();
   redirect("/");
 }

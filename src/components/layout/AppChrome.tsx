@@ -98,7 +98,6 @@ export function AppChrome({
                 </button>
                 <form
                   action={logoutAction}
-                  onSubmit={() => setNavLoading(true)}
                   className="m-0 inline-flex h-11 items-center p-0"
                 >
                   <button type="submit" className={authLinkCls}>
