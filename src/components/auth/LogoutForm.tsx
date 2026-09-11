@@ -1,64 +1,44 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { logoutAction } from "@/actions/auth";
-import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
+import { useNavLoading } from "@/components/layout/nav-loading";
 
 /**
- * 登出時顯示全頁 loading，完成後強制回首頁並 refresh，
- * 避免已在「/」時僅靠 redirect 不刷新而卡在 loading。
+ * 用 button onClick（非 form action），才能立刻畫出全頁 loading。
+ * form action 會把 setState 延後到 server action 結束，看起來像沒反應然後突然登出。
  */
 export function LogoutForm({
   className,
   buttonClassName,
   label = "登出",
-  pendingLabel = "登出中…",
-  loggedIn = true,
 }: {
   className?: string;
   buttonClassName?: string;
   label?: string;
-  pendingLabel?: string;
-  /** 登出完成、layout 變成未登入後會關閉全頁 loading */
-  loggedIn?: boolean;
 }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const nav = useNavLoading();
 
-  useEffect(() => {
-    if (!loggedIn) setLoading(false);
-  }, [loggedIn]);
-
-  useEffect(() => {
-    if (!loading) return;
-    const t = window.setTimeout(() => setLoading(false), 12_000);
-    return () => window.clearTimeout(t);
-  }, [loading]);
-
-  async function handleLogout() {
-    setLoading(true);
+  async function onLogout() {
+    flushSync(() => {
+      nav?.beginLogout();
+    });
     try {
       await logoutAction();
     } catch {
-      // 相容若 action 仍 redirect
+      // ignore
     }
     router.replace("/");
     router.refresh();
   }
 
   return (
-    <>
-      {loading ? (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-white">
-          <EqualizerLoader />
-        </div>
-      ) : null}
-      <form action={handleLogout} className={className}>
-        <button type="submit" disabled={loading} className={buttonClassName}>
-          {loading ? pendingLabel : label}
-        </button>
-      </form>
-    </>
+    <div className={className}>
+      <button type="button" onClick={() => void onLogout()} className={buttonClassName}>
+        {label}
+      </button>
+    </div>
   );
 }

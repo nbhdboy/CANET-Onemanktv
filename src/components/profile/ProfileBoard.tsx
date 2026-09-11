@@ -167,7 +167,7 @@ export function ProfileBoard({
 
             <Track n="03" title="離席">
               <LogoutForm
-                buttonClassName="flex min-h-12 w-full max-w-xs items-center justify-center border border-white text-sm font-semibold tracking-[0.18em] text-white transition-colors hover:bg-white hover:text-[#1a1040] disabled:opacity-60"
+                buttonClassName="flex min-h-12 w-full max-w-xs cursor-pointer items-center justify-center border border-white text-sm font-semibold tracking-[0.18em] text-white transition-colors hover:bg-white hover:text-[#1a1040] active:scale-[0.98]"
               />
             </Track>
 
