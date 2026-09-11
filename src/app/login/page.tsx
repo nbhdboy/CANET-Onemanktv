@@ -32,6 +32,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Search
         className="mt-8 border-t border-white/25 pt-5"
         tone="onDark"
         includeSafety={false}
+        align="center"
       />
     </GlassFormShell>
   );
