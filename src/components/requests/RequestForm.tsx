@@ -346,47 +346,50 @@ export function RequestForm({
                 <Track n="01" title="去哪唱" accent={accent}>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <IconField icon={<Mic2 size={16} />} label="KTV 品牌">
-                      <select
+                      <GlassMenuSelect
                         name="brandId"
+                        accent={accent}
                         value={brandId}
-                        onChange={(e) => pickBrand(e.target.value)}
-                        className={field}
-                      >
-                        {brands.map((b) => (
-                          <option key={b.id} value={b.id}>
-                            {b.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={pickBrand}
+                        placeholder="選擇品牌"
+                        aria-label="KTV 品牌"
+                        options={brands.map((b) => ({
+                          value: b.id,
+                          label: b.name,
+                        }))}
+                      />
                     </IconField>
                     <IconField icon={<MapPin size={16} />} label="城市">
-                      <select
-                        aria-label="城市"
+                      <GlassMenuSelect
+                        accent={accent}
                         value={city}
-                        onChange={(e) => pickCity(e.target.value)}
-                        className={field}
-                      >
-                        {citiesForBrand.map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={pickCity}
+                        placeholder="選擇城市"
+                        aria-label="城市"
+                        options={citiesForBrand.map((c) => ({
+                          value: c,
+                          label: c,
+                        }))}
+                      />
                     </IconField>
                     <IconField icon={<Building2 size={16} />} label="分店">
-                      <select
+                      <GlassMenuSelect
                         name="venueId"
+                        accent={accent}
                         required
-                        value={filtered.some((v) => v.id === venueId) ? venueId : filtered[0]?.id || ""}
-                        onChange={(e) => setVenueId(e.target.value)}
-                        className={field}
-                      >
-                        {filtered.map((v) => (
-                          <option key={v.id} value={v.id}>
-                            {venueOptionLabel(v)}
-                          </option>
-                        ))}
-                      </select>
+                        value={
+                          filtered.some((v) => v.id === venueId)
+                            ? venueId
+                            : filtered[0]?.id || ""
+                        }
+                        onChange={setVenueId}
+                        placeholder="選擇分店"
+                        aria-label="分店"
+                        options={filtered.map((v) => ({
+                          value: v.id,
+                          label: venueOptionLabel(v),
+                        }))}
+                      />
                     </IconField>
                   </div>
                 </Track>
