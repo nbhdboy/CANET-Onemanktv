@@ -77,9 +77,7 @@ export function AppChrome({
   return (
     <NavLoadingProvider value={navApi}>
       {navLoading ? (
-        <div className="flex min-h-screen items-center justify-center bg-white">
-          <EqualizerLoader />
-        </div>
+        <EqualizerLoader />
       ) : (
         <>
           {!hide && (
