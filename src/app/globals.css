@@ -204,47 +204,6 @@ textarea {
   letter-spacing: 0.01em;
 }
 
-.compose-glass-date-wrap {
-  position: relative;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-}
-
-.compose-glass-date-face {
-  display: flex;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  box-sizing: border-box;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  pointer-events: none;
-  font-variant-numeric: tabular-nums;
-}
-
-.compose-glass-date-face.is-empty {
-  color: #6b6280;
-}
-
-.compose-glass-date-native {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  width: 100%;
-  max-width: 100%;
-  height: 100%;
-  margin: 0;
-  border: 0;
-  padding: 0;
-  opacity: 0;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  color-scheme: light;
-}
-
 .compose-glass-field[type="date"]::-webkit-calendar-picker-indicator,
 .compose-glass-field[type="time"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
@@ -299,13 +258,6 @@ textarea {
   outline: none;
 }
 
-.compose-glass-time-wrap {
-  position: relative;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-}
-
 .compose-glass-time {
   display: flex;
   align-items: center;
@@ -316,15 +268,18 @@ textarea {
   box-sizing: border-box;
 }
 
-.compose-glass-time > .compose-glass-time-field {
+.compose-glass-time-slot {
   flex: 1 1 0;
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
+}
+
+.compose-glass-time-slot > .compose-glass-field {
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
   box-sizing: border-box;
-  cursor: pointer;
-  font: inherit;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.02em;
 }
 
 .compose-glass-time-sep {
@@ -335,47 +290,6 @@ textarea {
   flex: 0 0 auto;
   width: 0.7rem;
   text-align: center;
-}
-
-.compose-glass-time-panel {
-  margin-top: 0.45rem;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.35rem;
-  max-height: 12.5rem;
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 0.65rem;
-  border-radius: 1.1rem;
-  border: 1.5px solid rgba(255, 255, 255, 0.42);
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
-  box-sizing: border-box;
-  width: 100%;
-  max-width: 100%;
-}
-
-.compose-glass-time-option {
-  display: inline-flex;
-  height: 2.35rem;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: 0.75rem;
-  background: transparent;
-  color: #1a1040;
-  font: inherit;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-
-.compose-glass-time-option.is-selected,
-.compose-glass-time-option:hover {
-  background: rgba(26, 16, 64, 0.08);
-}
-
-.compose-glass-time-option.is-selected {
-  font-weight: 700;
 }
 
 .compose-glass-chip {

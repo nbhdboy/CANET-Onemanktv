@@ -1,13 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useActionState, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
   Building2,
   CalendarDays,
-  ChevronDown,
   Clock3,
   Lock,
   MapPin,
@@ -35,11 +34,33 @@ const init: ActionResult = { ok: false };
 const field =
   "compose-glass-field w-full rounded-2xl border-0 px-4 h-12 text-[#1a1040] outline-none";
 
-const timeField =
-  "compose-glass-field compose-glass-time-field inline-flex w-full items-center justify-center gap-1 rounded-2xl border-0 h-12 text-[#1a1040] outline-none";
-
 const TIME_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const TIME_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
+const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"] as const;
+
+function buildDateOptions(days = 90) {
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+  const options: { value: string; label: string }[] = [];
+
+  for (let i = 0; i < days; i += 1) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const year = d.getFullYear();
+    const month = d.getMonth() + 1;
+    const day = d.getDate();
+    const value = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const label =
+      i === 0
+        ? `${month}/${day}（今天）`
+        : `${month}/${day}（${WEEKDAY_LABELS[d.getDay()]}）`;
+    options.push({ value, label });
+  }
+
+  return options;
+}
+
+const DATE_OPTIONS = buildDateOptions(90);
 
 function prettyWhen(date: string, time: string) {
   if (!date || !time) return "";
@@ -372,7 +393,7 @@ export function RequestForm({
                 <Track n="02" title="何時唱" accent={accent}>
                   <div className="grid gap-3 sm:grid-cols-3">
                     <IconField icon={<CalendarDays size={16} />} label="日期">
-                      <GlassDateInput
+                      <GlassDateSelect
                         name="date"
                         required
                         value={date}
@@ -602,17 +623,7 @@ function IconField({
   );
 }
 
-function prettyDate(date: string) {
-  if (!date) return "";
-  const parts = date.split("-");
-  const year = Number(parts[0]);
-  const month = Number(parts[1]);
-  const day = Number(parts[2]);
-  if (!year || !month || !day) return date;
-  return `${year}/${month}/${day}`;
-}
-
-function GlassDateInput({
+function GlassDateSelect({
   value,
   onChange,
   name,
@@ -623,27 +634,34 @@ function GlassDateInput({
   name: string;
   required?: boolean;
 }) {
-  const label = prettyDate(value);
+  const options = useMemo(() => {
+    if (!value || DATE_OPTIONS.some((opt) => opt.value === value)) return DATE_OPTIONS;
+    const parts = value.split("-");
+    const month = Number(parts[1]);
+    const day = Number(parts[2]);
+    const label =
+      month && day ? `${month}/${day}` : value;
+    return [{ value, label }, ...DATE_OPTIONS];
+  }, [value]);
 
   return (
-    <div className="compose-glass-date-wrap">
-      <div
-        className={`${field} compose-glass-date-face ${label ? "" : "is-empty"}`}
-        aria-hidden
-      >
-        <span className="min-w-0 truncate">{label || "選擇日期"}</span>
-        <CalendarDays size={16} strokeWidth={2.25} className="shrink-0 opacity-55" />
-      </div>
-      <input
-        className="compose-glass-date-native"
-        name={name}
-        type="date"
-        required={required}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-label="日期"
-      />
-    </div>
+    <select
+      name={name}
+      required={required}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className={field}
+      aria-label="日期"
+    >
+      <option value="" disabled>
+        選擇日期
+      </option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -658,8 +676,6 @@ function GlassTimeSelect({
 }) {
   const [hour = "", minute = ""] = value ? value.split(":") : ["", ""];
   const snappedMinute = TIME_MINUTES.includes(minute) ? minute : "";
-  const [open, setOpen] = useState<"hour" | "minute" | null>(null);
-  const rootRef = useRef<HTMLDivElement>(null);
 
   function setPart(nextHour: string, nextMinute: string) {
     if (!nextHour && !nextMinute) {
@@ -669,95 +685,50 @@ function GlassTimeSelect({
     onChange(`${nextHour || "00"}:${nextMinute || "00"}`);
   }
 
-  useEffect(() => {
-    if (!open) return;
-
-    function onPointerDown(event: PointerEvent) {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(null);
-      }
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(null);
-    }
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
-  const options = open === "hour" ? TIME_HOURS : TIME_MINUTES;
-  const active = open === "hour" ? hour : snappedMinute;
-
   return (
-    <div ref={rootRef} className="compose-glass-time-wrap">
-      <input
-        type="text"
-        name="time"
-        value={value}
-        required={required}
-        readOnly
-        tabIndex={-1}
-        aria-hidden
-        className="sr-only"
-      />
+    <>
+      <input type="hidden" name="time" value={value} />
       <div className="compose-glass-time">
-        <button
-          type="button"
-          aria-label="開唱時間（時）"
-          aria-haspopup="listbox"
-          aria-expanded={open === "hour"}
-          className={timeField}
-          onClick={() => setOpen((prev) => (prev === "hour" ? null : "hour"))}
-        >
-          <span>{hour || "--"}</span>
-          <ChevronDown size={14} strokeWidth={2.25} aria-hidden className="opacity-55" />
-        </button>
+        <div className="compose-glass-time-slot">
+          <select
+            aria-label="開唱時間（時）"
+            required={required}
+            value={hour}
+            onChange={(e) => setPart(e.target.value, snappedMinute || "00")}
+            className={field}
+          >
+            <option value="" disabled>
+              幾點
+            </option>
+            {TIME_HOURS.map((h) => (
+              <option key={h} value={h}>
+                {h}
+              </option>
+            ))}
+          </select>
+        </div>
         <span className="compose-glass-time-sep" aria-hidden>
           :
         </span>
-        <button
-          type="button"
-          aria-label="開唱時間（分）"
-          aria-haspopup="listbox"
-          aria-expanded={open === "minute"}
-          className={timeField}
-          onClick={() => setOpen((prev) => (prev === "minute" ? null : "minute"))}
-        >
-          <span>{snappedMinute || "--"}</span>
-          <ChevronDown size={14} strokeWidth={2.25} aria-hidden className="opacity-55" />
-        </button>
-      </div>
-      {open ? (
-        <div className="compose-glass-time-panel" role="listbox" aria-label={open === "hour" ? "選擇小時" : "選擇分鐘"}>
-          {options.map((option) => {
-            const selected = option === active;
-            return (
-              <button
-                key={option}
-                type="button"
-                role="option"
-                aria-selected={selected}
-                className={`compose-glass-time-option ${selected ? "is-selected" : ""}`}
-                onClick={() => {
-                  if (open === "hour") {
-                    setPart(option, snappedMinute || "00");
-                  } else {
-                    setPart(hour || "00", option);
-                  }
-                  setOpen(null);
-                }}
-              >
-                {option}
-              </button>
-            );
-          })}
+        <div className="compose-glass-time-slot">
+          <select
+            aria-label="開唱時間（分）"
+            required={required}
+            value={snappedMinute}
+            onChange={(e) => setPart(hour || "00", e.target.value)}
+            className={field}
+          >
+            <option value="" disabled>
+              幾分
+            </option>
+            {TIME_MINUTES.map((m) => (
+              <option key={m} value={m}>
+                {m}
+              </option>
+            ))}
+          </select>
         </div>
-      ) : null}
-    </div>
+      </div>
+    </>
   );
 }
