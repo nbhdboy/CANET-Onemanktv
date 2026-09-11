@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { logoutAction } from "@/actions/auth";
 import { SiteLegalLinks } from "@/components/legal/SiteLegalLinks";
-import { LogoutButton } from "@/components/profile/LogoutButton";
+import { LogoutForm } from "@/components/auth/LogoutForm";
 import { StageDisc } from "@/components/layout/StageDisc";
 import { heroByAge, type HeroAge } from "@/lib/constants";
 import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
@@ -167,9 +166,9 @@ export function ProfileBoard({
             </Track>
 
             <Track n="03" title="離席">
-              <form action={logoutAction}>
-                <LogoutButton />
-              </form>
+              <LogoutForm
+                buttonClassName="flex min-h-12 w-full max-w-xs items-center justify-center border border-white text-sm font-semibold tracking-[0.18em] text-white transition-colors hover:bg-white hover:text-[#1a1040] disabled:opacity-60"
+              />
             </Track>
 
             <Track n="04" title="條款與客服">

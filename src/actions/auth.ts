@@ -188,7 +188,7 @@ export async function logoutAction() {
     });
   }
   await destroySession();
-  redirect("/");
+  // 由客戶端 LogoutForm 負責 replace("/") + refresh，避免已在首頁時 redirect 不刷新而卡在 loading
 }
 
 export async function currentUser() {

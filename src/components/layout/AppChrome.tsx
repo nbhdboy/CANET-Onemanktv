@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Bell, Mic2, Music2, UserRound, Plus } from "lucide-react";
-import { logoutAction } from "@/actions/auth";
+import { LogoutForm } from "@/components/auth/LogoutForm";
 import { EqualizerLoader } from "@/components/ui/EqualizerLoader";
 
 type UserLite = {
@@ -96,14 +96,11 @@ export function AppChrome({
                 >
                   {user.nickname}
                 </button>
-                <form
-                  action={logoutAction}
+                <LogoutForm
                   className="m-0 inline-flex h-11 items-center p-0"
-                >
-                  <button type="submit" className={authLinkCls}>
-                    登出
-                  </button>
-                </form>
+                  buttonClassName={authLinkCls}
+                  loggedIn={Boolean(user)}
+                />
               </>
             ) : (
               <Link href="/login" className={authLinkCls}>
