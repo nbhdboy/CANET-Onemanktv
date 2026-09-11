@@ -19,6 +19,7 @@ import { SafetyActions } from "@/components/safety/SafetyActions";
 import { PaymentDeadlineCountdown } from "@/components/match/PaymentDeadlineCountdown";
 import { GlassFormShell } from "@/components/layout/GlassFormShell";
 import { canReview, getMyReviewForMatch } from "@/lib/reviews";
+import { getMyReportAgainstUser, hasBlockedUser } from "@/lib/safety";
 import { useSupabaseApp } from "@/lib/runtime";
 import { getTapPayPublicConfig, isLivePayment } from "@/lib/tappay/env";
 import { getPublicSavedCard } from "@/lib/tappay/cards";
@@ -64,6 +65,15 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
     !reviewGate.ok && reviewGate.reason === "ALREADY"
       ? await getMyReviewForMatch(session.id, match.id)
       : null;
+  const [existingReport, initiallyBlocked] = await Promise.all([
+    getMyReportAgainstUser({
+      reporterId: session.id,
+      reportedUserId: counterpartId,
+      matchId: match.id,
+      requestId: match.request_id,
+    }),
+    hasBlockedUser(session.id, counterpartId),
+  ]);
   const points = Number(myProfile?.points ?? 0);
 
   const fromCookie = parseHeroAge((await cookies()).get(HERO_AGE_COOKIE)?.value);
@@ -231,6 +241,8 @@ export default async function MatchDetailPage({ params }: { params: IdParams }) 
           userId={counterpartId}
           matchId={match.id}
           requestId={match.request_id}
+          existingReport={existingReport}
+          initiallyBlocked={initiallyBlocked}
           {...accents}
         />
       </div>

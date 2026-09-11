@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { ApplyButton } from "@/components/feed/ApplyButton";
 import { CancelRequestButton } from "@/components/requests/CancelRequestButton";
-import { SafetyActions } from "@/components/safety/SafetyActions";
+import { SafetyActions, type ExistingReport } from "@/components/safety/SafetyActions";
 import { Stars } from "@/components/ui/Stars";
 import { PREFERENCE_OPTIONS, heroByAge } from "@/lib/constants";
 import { avatarPresetOrFallback, avatarPresetSrc, isPhotoAvatar } from "@/lib/avatar";
@@ -19,6 +19,8 @@ export function RequestStage({
   onTimePct,
   friendlyPct,
   reviews,
+  existingReport = null,
+  initiallyBlocked = false,
 }: {
   item: RequestCardData;
   isOwner: boolean;
@@ -26,6 +28,8 @@ export function RequestStage({
   onTimePct: number;
   friendlyPct: number;
   reviews: ReviewRecord[];
+  existingReport?: ExistingReport | null;
+  initiallyBlocked?: boolean;
 }) {
   const hero = heroByAge(item.age_band);
   const preset = avatarPresetOrFallback(item.initiator.avatar_url);
@@ -228,6 +232,8 @@ export function RequestStage({
               <SafetyActions
                 userId={item.initiator.id}
                 requestId={item.id}
+                existingReport={existingReport}
+                initiallyBlocked={initiallyBlocked}
                 accent={hero.glassGlow}
                 accentSoft={hero.glassGlowSoft}
                 ctaFrom={hero.ctaFrom}

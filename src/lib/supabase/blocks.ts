@@ -136,3 +136,55 @@ export async function createSupabaseReport(input: {
   if (error) throw new Error(error.message || "無法送出檢舉。");
   return String(data.id);
 }
+
+export async function hasSupabaseBlockedUser(blockerId: string, blockedId: string) {
+  const client = writeClient();
+  const { data, error } = await client
+    .from("blocks")
+    .select("blocker_id")
+    .eq("blocker_id", blockerId)
+    .eq("blocked_id", blockedId)
+    .limit(1);
+  if (error) throw new Error(error.message || "無法確認封鎖狀態。");
+  return Boolean(data?.length);
+}
+
+export async function getSupabaseMyReportAgainstUser(input: {
+  reporterId: string;
+  reportedUserId: string;
+  matchId?: string;
+  requestId?: string;
+}) {
+  const client = writeClient();
+  const matchId = asUuidOrNull(input.matchId);
+  const requestId = asUuidOrNull(input.requestId);
+
+  async function fetchLatest(extra?: { matchId?: string; requestId?: string }) {
+    let query = client
+      .from("reports")
+      .select("id, reason, description, status, match_id, request_id, created_at")
+      .eq("reporter_id", input.reporterId)
+      .eq("reported_user_id", input.reportedUserId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (extra?.matchId) query = query.eq("match_id", extra.matchId);
+    if (extra?.requestId) query = query.eq("request_id", extra.requestId);
+    const { data, error } = await query.maybeSingle();
+    if (error) throw new Error(error.message || "無法讀取檢舉紀錄。");
+    return data;
+  }
+
+  const scoped =
+    (matchId ? await fetchLatest({ matchId }) : null) ||
+    (requestId ? await fetchLatest({ requestId }) : null) ||
+    (await fetchLatest());
+
+  if (!scoped) return null;
+  return {
+    id: String(scoped.id),
+    reason: String(scoped.reason),
+    description: (scoped.description as string | null) ?? null,
+    status: String(scoped.status),
+    created_at: String(scoped.created_at),
+  };
+}

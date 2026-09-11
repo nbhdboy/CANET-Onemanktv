@@ -82,4 +82,64 @@ export async function createReport(input: {
   return id;
 }
 
+export async function hasBlockedUser(blockerId: string, blockedId: string) {
+  if (useSupabaseApp()) {
+    const { hasSupabaseBlockedUser } = await import("@/lib/supabase/blocks");
+    return hasSupabaseBlockedUser(blockerId, blockedId);
+  }
+  const row = getDb()
+    .prepare(`SELECT 1 FROM blocks WHERE blocker_id = ? AND blocked_id = ?`)
+    .get(blockerId, blockedId);
+  return Boolean(row);
+}
+
+export async function getMyReportAgainstUser(input: {
+  reporterId: string;
+  reportedUserId: string;
+  matchId?: string;
+  requestId?: string;
+}) {
+  if (useSupabaseApp()) {
+    const { getSupabaseMyReportAgainstUser } = await import("@/lib/supabase/blocks");
+    return getSupabaseMyReportAgainstUser(input);
+  }
+
+  const db = getDb();
+  if (input.matchId) {
+    const byMatch = db
+      .prepare(
+        `SELECT id, reason, description, status, created_at FROM reports
+         WHERE reporter_id = ? AND reported_user_id = ? AND match_id = ?
+         ORDER BY created_at DESC LIMIT 1`,
+      )
+      .get(input.reporterId, input.reportedUserId, input.matchId) as
+      | { id: string; reason: string; description: string | null; status: string; created_at: string }
+      | undefined;
+    if (byMatch) return byMatch;
+  }
+  if (input.requestId) {
+    const byRequest = db
+      .prepare(
+        `SELECT id, reason, description, status, created_at FROM reports
+         WHERE reporter_id = ? AND reported_user_id = ? AND request_id = ?
+         ORDER BY created_at DESC LIMIT 1`,
+      )
+      .get(input.reporterId, input.reportedUserId, input.requestId) as
+      | { id: string; reason: string; description: string | null; status: string; created_at: string }
+      | undefined;
+    if (byRequest) return byRequest;
+  }
+  return (
+    (db
+      .prepare(
+        `SELECT id, reason, description, status, created_at FROM reports
+         WHERE reporter_id = ? AND reported_user_id = ?
+         ORDER BY created_at DESC LIMIT 1`,
+      )
+      .get(input.reporterId, input.reportedUserId) as
+      | { id: string; reason: string; description: string | null; status: string; created_at: string }
+      | undefined) ?? null
+  );
+}
+
 export { isBlockedEither };
