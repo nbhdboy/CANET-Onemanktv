@@ -11,7 +11,8 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#7c3aed",
     lang: "zh-Hant",
     icons: [
-      { src: "/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
+      { src: "/icon.jpg", sizes: "512x512", type: "image/jpeg", purpose: "any" },
+      { src: "/brand/ktv-plus-1.jpg", sizes: "1024x1024", type: "image/jpeg", purpose: "any" },
     ],
   };
 }

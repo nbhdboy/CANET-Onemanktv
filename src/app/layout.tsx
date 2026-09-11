@@ -28,10 +28,34 @@ const noto = Noto_Sans_TC({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://canet-onemanktv.vercel.app",
+  ),
   title: `${APP_NAME}｜一人 KTV 媒合`,
   description: APP_TAGLINE,
   applicationName: APP_NAME,
   appleWebApp: { capable: true, title: APP_NAME, statusBarStyle: "default" },
+  openGraph: {
+    type: "website",
+    locale: "zh_TW",
+    siteName: APP_NAME,
+    title: `${APP_NAME}｜一人 KTV 媒合`,
+    description: APP_TAGLINE,
+    images: [
+      {
+        url: "/opengraph-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: `${APP_NAME}｜一人 KTV 媒合`,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${APP_NAME}｜一人 KTV 媒合`,
+    description: APP_TAGLINE,
+    images: ["/opengraph-image.jpg"],
+  },
 };
 
 export const viewport: Viewport = {
