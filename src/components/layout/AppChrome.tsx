@@ -118,12 +118,18 @@ export function AppChrome({
       <div className={hide || isHome ? "" : "pb-24 lg:pb-8"}>{children}</div>
 
       {!hide && (
-        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-[var(--line)] pb-[env(safe-area-inset-bottom)]">
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-[70] bg-white/95 backdrop-blur border-t border-[var(--line)] pb-[env(safe-area-inset-bottom)]">
           <ul className="grid grid-cols-4 h-16">
             <Tab href="/" icon={<Music2 size={22} />} label="找歌友" active={pathname === "/"} />
             <Tab href="/requests/new" icon={<Plus size={22} />} label="發起" active={pathname.startsWith("/requests/new")} />
             <Tab href="/matches" icon={<Mic2 size={22} />} label="媒合" active={pathname.startsWith("/matches")} />
-            <Tab href="/profile" icon={<UserRound size={22} />} label="我的" active={pathname.startsWith("/profile") || pathname.startsWith("/settings")} />
+            <Tab
+              href="/profile"
+              icon={<UserRound size={22} />}
+              label="我的"
+              active={pathname.startsWith("/profile") || pathname.startsWith("/settings") || pathname.startsWith("/notifications")}
+              badge={user?.unread ?? 0}
+            />
           </ul>
         </nav>
       )}
@@ -142,21 +148,31 @@ function Tab({
   icon,
   label,
   active,
+  badge = 0,
 }: {
   href: string;
   icon: React.ReactNode;
   label: string;
   active: boolean;
+  badge?: number;
 }) {
   return (
     <li>
       <Link
         href={href}
-        className={`flex h-full flex-col items-center justify-center gap-1 text-[11px] ${
+        aria-label={badge > 0 ? `${label}，${badge} 則未讀通知` : label}
+        className={`relative flex h-full flex-col items-center justify-center gap-1 text-[11px] ${
           active ? "text-purple-700 font-semibold" : "text-[var(--muted)]"
         }`}
       >
-        {icon}
+        <span className="relative inline-flex">
+          {icon}
+          {badge > 0 ? (
+            <span className="absolute -right-2.5 -top-1.5 min-w-4 h-4 px-1 rounded-full bg-pink-500 text-center text-[10px] leading-4 text-white">
+              {badge > 99 ? "99+" : badge}
+            </span>
+          ) : null}
+        </span>
         {label}
       </Link>
     </li>
