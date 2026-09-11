@@ -34,6 +34,9 @@ const init: ActionResult = { ok: false };
 const field =
   "compose-glass-field w-full rounded-2xl border-0 px-4 h-12 text-[#1a1040] outline-none";
 
+const timeField =
+  "compose-glass-field compose-glass-time-field w-full rounded-2xl border-0 h-12 text-[#1a1040] outline-none";
+
 const TIME_HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
 const TIME_MINUTES = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, "0"));
 
@@ -621,43 +624,45 @@ function GlassTimeSelect({
   }
 
   return (
-    <div className="compose-glass-time">
+    <>
       <input type="hidden" name="time" value={value} />
-      <select
-        aria-label="開唱時間（時）"
-        required={required}
-        value={hour}
-        onChange={(e) => setPart(e.target.value, snappedMinute || "00")}
-        className={field}
-      >
-        <option value="" disabled>
-          --
-        </option>
-        {TIME_HOURS.map((h) => (
-          <option key={h} value={h}>
-            {h}
+      <div className="compose-glass-time">
+        <select
+          aria-label="開唱時間（時）"
+          required={required}
+          value={hour}
+          onChange={(e) => setPart(e.target.value, snappedMinute || "00")}
+          className={timeField}
+        >
+          <option value="" disabled>
+            --
           </option>
-        ))}
-      </select>
-      <span className="compose-glass-time-sep" aria-hidden>
-        :
-      </span>
-      <select
-        aria-label="開唱時間（分）"
-        required={required}
-        value={snappedMinute}
-        onChange={(e) => setPart(hour || "00", e.target.value)}
-        className={field}
-      >
-        <option value="" disabled>
-          --
-        </option>
-        {TIME_MINUTES.map((m) => (
-          <option key={m} value={m}>
-            {m}
+          {TIME_HOURS.map((h) => (
+            <option key={h} value={h}>
+              {h}
+            </option>
+          ))}
+        </select>
+        <span className="compose-glass-time-sep" aria-hidden>
+          :
+        </span>
+        <select
+          aria-label="開唱時間（分）"
+          required={required}
+          value={snappedMinute}
+          onChange={(e) => setPart(hour || "00", e.target.value)}
+          className={timeField}
+        >
+          <option value="" disabled>
+            --
           </option>
-        ))}
-      </select>
-    </div>
+          {TIME_MINUTES.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
+      </div>
+    </>
   );
 }
